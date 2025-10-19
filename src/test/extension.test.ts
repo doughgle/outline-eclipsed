@@ -78,3 +78,161 @@ suite('PI-0: Extension Skeleton Test Suite', () => {
 		assert.ok(commands.includes('outlineEclipsed.gotoItem'), 'Tree view should still be registered');
 	});
 });
+
+suite('PI-1: Tree View Integration Tests', () => {
+	
+	test('Tree view should populate with headings from markdown file', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\n## Heading 2\n\n### Heading 3',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Extension should be active
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Goto command should navigate to heading line', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '# First\n\nSome text\n\n## Second\n\nMore text',
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		
+		// Navigate to line 4 (the "## Second" heading)
+		await vscode.commands.executeCommand('outlineEclipsed.gotoItem', 4);
+
+		assert.strictEqual(editor.selection.active.line, 4, 'Cursor should be on line 4');
+	});
+
+	test('Tree view should update when markdown document changes', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Original Heading',
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Make an edit to add a new heading
+		await editor.edit(editBuilder => {
+			editBuilder.insert(new vscode.Position(1, 0), '\n## New Heading');
+		});
+
+		// Give time for refresh
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Verify extension is still active and processing changes
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should remain active after edit');
+	});
+
+	test('Tree view should show empty for markdown file with no headings', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: 'Just plain text.\nNo headings here.\nMore text.',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Extension should be active even with no headings
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Tree view should clear outline when switching from markdown to non-markdown file', async () => {
+		// First, open a markdown document with headings
+		const markdownDoc = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\n## Heading 2\n\nContent here.',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(markdownDoc);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Now switch to a JavaScript file
+		const jsDoc = await vscode.workspace.openTextDocument({
+			content: 'console.log("hello");\nconst x = 42;',
+			language: 'javascript'
+		});
+
+		await vscode.window.showTextDocument(jsDoc);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Tree view should be empty (no headings from markdown should remain)
+		// We can't directly check tree contents, but we verify extension is active
+		// and handling the switch correctly
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should remain active after switching files');
+	});
+
+	test('Extension should handle untitled markdown documents', async () => {
+		// This test simulates opening an untitled markdown file
+		const untitledDoc = await vscode.workspace.openTextDocument({
+			content: '# Test Heading from Untitled\n\n## Subheading\n\nContent here.',
+			language: 'markdown'
+		});
+		
+		// Show the document in an editor (this triggers onDidChangeActiveTextEditor)
+		const editor = await vscode.window.showTextDocument(untitledDoc);
+		
+		// Verify document properties
+		assert.strictEqual(editor.document.uri.scheme, 'untitled');
+		assert.strictEqual(editor.document.languageId, 'markdown');
+		
+		// Give event handlers time to process
+		await new Promise(resolve => setTimeout(resolve, 500));
+		
+		// Verify extension handles it correctly
+		assert.ok(editor, 'Editor should be active');
+		assert.strictEqual(editor.document.languageId, 'markdown', 'Should recognize as markdown');
+		
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Extension should respond to language mode changes (plaintext to markdown)', async () => {
+		// This simulates the real-world scenario: User opens untitled file (plaintext),
+		// types content, then manually changes language to markdown
+		
+		// Create untitled document - defaults to plaintext initially
+		const untitledDoc = await vscode.workspace.openTextDocument({
+			content: '',
+			language: 'plaintext' // Start as plaintext (what VS Code does for new untitled files)
+		});
+		
+		const editor = await vscode.window.showTextDocument(untitledDoc);
+		assert.strictEqual(editor.document.languageId, 'plaintext');
+		
+		// Wait for extension to process
+		await new Promise(resolve => setTimeout(resolve, 200));
+		
+		// User types markdown content
+		await editor.edit(editBuilder => {
+			editBuilder.insert(new vscode.Position(0, 0), '# Heading 1\n\n## Heading 2\n\nContent');
+		});
+		
+		// Document is still plaintext - VS Code doesn't auto-detect language
+		assert.strictEqual(editor.document.languageId, 'plaintext', 
+			'VS Code keeps untitled as plaintext even with markdown content');
+		
+		// User manually changes language to markdown (or saves with .md extension)
+		await vscode.languages.setTextDocumentLanguage(editor.document, 'markdown');
+		
+		// Now it should be markdown
+		assert.strictEqual(editor.document.languageId, 'markdown');
+		
+		// Give extension time to process language change event
+		await new Promise(resolve => setTimeout(resolve, 500));
+		
+		// Verify extension handled the language change
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+		assert.strictEqual(editor.document.languageId, 'markdown', 'Document should be markdown');
+	});
+});

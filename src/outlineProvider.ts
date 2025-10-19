@@ -17,12 +17,19 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     protected currentDocument: vscode.TextDocument | undefined;
 
     /**
-     * Refreshes the tree view with the current document
+     * Refreshes the tree view with the current document.
+     * Pass undefined to clear the tree view.
+     * 
+     * @param document - Document to parse, or undefined to clear
      */
     refresh(document?: vscode.TextDocument): void {
         if (document) {
             this.currentDocument = document;
             this.items = this.parseDocument(document);
+        } else {
+            // Clear the tree when no document provided
+            this.currentDocument = undefined;
+            this.items = [];
         }
         this._onDidChangeTreeData.fire();
     }

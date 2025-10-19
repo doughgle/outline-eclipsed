@@ -74,6 +74,24 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// Listen to document open events to handle language mode changes
+	// When user changes language (e.g., plaintext -> markdown), VS Code fires close + open events
+	context.subscriptions.push(
+		vscode.workspace.onDidOpenTextDocument(document => {
+			// Only process if this is the active document
+			if (document === vscode.window.activeTextEditor?.document) {
+				console.log(`PI-0: Document opened/language changed: ${document.languageId}`);
+				updateTreeViewMessage(vscode.window.activeTextEditor);
+				
+				if (document.languageId === 'markdown') {
+					markdownProvider.refresh(document);
+				} else {
+					markdownProvider.refresh(undefined);
+				}
+			}
+		})
+	);
+
 	// Initial load - set message and refresh if markdown file is open
 	updateTreeViewMessage(vscode.window.activeTextEditor);
 	if (vscode.window.activeTextEditor?.document.languageId === 'markdown') {
