@@ -6,6 +6,11 @@ import * as vscode from 'vscode';
  */
 export class OutlineItem extends vscode.TreeItem {
     /**
+     * Parent item in the tree (PI-2: needed for getParent() implementation)
+     */
+    public parent: OutlineItem | undefined;
+
+    /**
      * Creates an outline item
      * @param label - Display text for the item
      * @param level - Hierarchy level (e.g., H1=1, H2=2 for markdown)
@@ -29,11 +34,11 @@ export class OutlineItem extends vscode.TreeItem {
                 : vscode.TreeItemCollapsibleState.None
         );
 
-        // Set basic icon (will be enhanced in future increments)
-        this.iconPath = new vscode.ThemeIcon('symbol-misc');
+        // Use 'symbol-string' icon (abc icon) - same as VS Code default outline for markdown
+        this.iconPath = new vscode.ThemeIcon('symbol-string');
         
-        // Show level in description for now
-        this.description = `L${level}`;
+        // No description needed - level is shown through tree hierarchy
+        this.description = undefined;
         
         // Set context value for future command filtering
         this.contextValue = 'outlineItem';

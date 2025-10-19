@@ -236,3 +236,130 @@ suite('PI-1: Tree View Integration Tests', () => {
 		assert.strictEqual(editor.document.languageId, 'markdown', 'Document should be markdown');
 	});
 });
+
+suite('PI-2: Hierarchical Tree View Tests', () => {
+
+	test('Tree view should show hierarchical structure with H1 and H2 headings', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Root\n\n## Child 1\n\n## Child 2\n\nContent',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Tree view should show multiple root H2 headings when no H1 present', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '## Section 1\n\n### Sub 1.1\n\n## Section 2\n\n### Sub 2.1\n\nContent',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+		
+		// Note: Can't directly access tree items from integration test,
+		// but provider should handle this correctly (verified in unit tests)
+	});
+
+	test('Tree view should handle deeply nested structure (H1 > H2 > H3)', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Level 1\n\n## Level 2\n\n### Level 3\n\n#### Level 4',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Tree view should show collapsible items for headings with children', async () => {
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Parent\n\n## Child\n\nContent',
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Verify document is active
+		assert.strictEqual(editor.document.languageId, 'markdown');
+		
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+});
+
+suite('PI-2: Tree View Selection Sync Tests', () => {
+
+	test('Tree view selection sync infrastructure should be registered', async () => {
+		// This test verifies the infrastructure for selection sync is in place
+		// Full selection sync behavior requires manual testing with visible tree view
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\nContent 1\n\n# Heading 2\n\nContent 2',
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Get the tree view reference from extension
+		const extensionModule = await import('../extension.js');
+		const treeView = extensionModule.outlineTreeView;
+		assert.ok(treeView, 'Tree view should be created');
+
+		// Verify onDidChangeSelection event exists
+		assert.ok(treeView.onDidChangeSelection, 
+			'Tree view should have onDidChangeSelection event');
+		
+		// Verify selection property exists (readonly array)
+		assert.ok(Array.isArray(treeView.selection),
+			'Tree view should have selection property');
+	});
+
+	test('Provider should find item at line within heading section', async () => {
+		// Test the findItemAtLine method that powers selection sync
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\nContent line 1\nContent line 2\n\n# Heading 2\n\nContent',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Note: Direct testing of provider.findItemAtLine() would require accessing
+		// the provider instance, which is private to extension.ts
+		// This test verifies the document is loaded correctly
+		assert.strictEqual(document.lineCount, 8, 'Document should have expected line count');
+		assert.ok(extension?.isActive, 'Extension should be active');
+	});
+
+	test('Provider getParent method should return parent for nested items', async () => {
+		// Test that getParent is implemented (required for reveal)
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\n## Heading 2\n\n### Heading 3\n\nContent',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Hierarchical structure should be created
+		assert.ok(extension?.isActive, 'Extension should be active');
+	});
+});

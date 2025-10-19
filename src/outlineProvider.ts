@@ -43,8 +43,15 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
 
     /**
      * Required by TreeDataProvider - returns tree item for given element
+     * Updates collapsibleState based on current children count (PI-2)
      */
     getTreeItem(element: OutlineItem): vscode.TreeItem {
+        // Update collapsibleState based on whether element has children
+        // This is necessary because children are added after construction in buildHierarchy
+        element.collapsibleState = element.children.length > 0
+            ? vscode.TreeItemCollapsibleState.Collapsed
+            : vscode.TreeItemCollapsibleState.None;
+        
         return element;
     }
 
@@ -66,10 +73,45 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     }
 
     /**
-     * Required by TreeDataProvider - returns parent for given element
+     * Required by TreeDataProvider - returns parent for given element.
+     * PI-2: Needed for TreeView.reveal() to work correctly.
+     * 
+     * @param element - Item to get parent for
+     * @returns Parent item or undefined if element is root
      */
     getParent(element: OutlineItem): vscode.ProviderResult<OutlineItem> {
-        // TODO: Implement parent lookup in tree structure
-        return null;
+        return element.parent;
+    }
+
+    /**
+     * PI-2: Finds the heading that contains the given line number.
+     * Recursively searches through the tree to find the most specific heading.
+     * 
+     * @param lineNumber - Line number to search for
+     * @returns OutlineItem containing the line, or undefined if not found
+     */
+    findItemAtLine(lineNumber: number): OutlineItem | undefined {
+        return this.searchItems(this.items, lineNumber);
+    }
+
+    /**
+     * Recursively searches items for the one containing the given line.
+     * Returns the most deeply nested item (most specific heading).
+     * 
+     * @param items - Items to search
+     * @param lineNumber - Line number to search for
+     * @returns Most specific item containing the line
+     */
+    private searchItems(items: OutlineItem[], lineNumber: number): OutlineItem | undefined {
+        for (const item of items) {
+            // Check if line is within this item's range
+            if (lineNumber >= item.line && lineNumber <= item.endLine) {
+                // Check children first (more specific)
+                const childMatch = this.searchItems(item.children, lineNumber);
+                // Return child match if found, otherwise return this item
+                return childMatch || item;
+            }
+        }
+        return undefined;
     }
 }
