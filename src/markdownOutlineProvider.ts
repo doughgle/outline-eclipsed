@@ -14,6 +14,7 @@ export class MarkdownOutlineProvider extends OutlineProvider {
      * Parses markdown document to extract hierarchical outline structure.
      * 
      * PI-2: Builds nested hierarchy where H2 is child of H1, H3 is child of H2, etc.
+     * PI-2 Refactor: Creates DocumentSymbol-compatible Range objects.
      * Handles edge cases like skipped levels and documents without root H1.
      * 
      * @param document - Markdown document to parse
@@ -31,11 +32,19 @@ export class MarkdownOutlineProvider extends OutlineProvider {
                 const text = this.getHeadingText(line.text);
                 const endLine = this.findSectionEnd(document, i, level);
                 
+                // Create Range objects (DocumentSymbol-compatible)
+                const headingLine = document.lineAt(i);
+                const selectionRange = headingLine.range; // Just the heading line
+                const range = new vscode.Range(
+                    i, 0,  // Start of heading line
+                    endLine, document.lineAt(endLine).text.length  // End of section
+                );
+                
                 const item = new OutlineItem(
                     text,
                     level,
-                    i,
-                    endLine,
+                    range,
+                    selectionRange,
                     [], // Children will be populated in hierarchy building
                     this.getSymbolKindForLevel(level)
                 );

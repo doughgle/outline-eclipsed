@@ -85,6 +85,7 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
 
     /**
      * PI-2: Finds the heading that contains the given line number.
+     * PI-2 Refactor: Uses Range.contains() for precise position matching.
      * Recursively searches through the tree to find the most specific heading.
      * 
      * @param lineNumber - Line number to search for
@@ -104,8 +105,11 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
      */
     private searchItems(items: OutlineItem[], lineNumber: number): OutlineItem | undefined {
         for (const item of items) {
-            // Check if line is within this item's range
-            if (lineNumber >= item.line && lineNumber <= item.endLine) {
+            // Create a position at the start of the line
+            const position = new vscode.Position(lineNumber, 0);
+            
+            // Check if position is within this item's range
+            if (item.range.contains(position)) {
                 // Check children first (more specific)
                 const childMatch = this.searchItems(item.children, lineNumber);
                 // Return child match if found, otherwise return this item

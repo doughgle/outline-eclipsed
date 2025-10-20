@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		if (item) {
 			// Reveal and select the item in tree view
-			console.log(`PI-2: Syncing selection to heading at line ${item.line}: ${item.label}`);
+			console.log(`PI-2: Syncing selection to heading at line ${item.selectionRange.start.line}: ${item.label}`);
 			await treeView.reveal(item, { select: true, focus: false });
 		}
 	};

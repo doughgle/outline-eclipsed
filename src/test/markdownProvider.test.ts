@@ -26,7 +26,7 @@ suite('MarkdownOutlineProvider - Parsing Tests', () => {
 		assert.strictEqual(items.length, 1, 'Should have exactly one heading');
 		assert.strictEqual(items[0].label, 'Heading 1', 'Heading text should be correct');
 		assert.strictEqual(items[0].level, 1, 'Heading level should be 1');
-		assert.strictEqual(items[0].line, 0, 'Heading should be on line 0');
+		assert.strictEqual(items[0].range.start.line, 0, 'Heading should be on line 0');
 	});
 
 	test('Should parse multiple headings at different levels', async () => {
@@ -43,21 +43,21 @@ suite('MarkdownOutlineProvider - Parsing Tests', () => {
 		assert.strictEqual(rootItems.length, 1, 'Should have one root H1');
 		assert.strictEqual(rootItems[0].label, 'H1 Heading');
 		assert.strictEqual(rootItems[0].level, 1);
-		assert.strictEqual(rootItems[0].line, 0);
+		assert.strictEqual(rootItems[0].range.start.line, 0);
 		
 		// H2 is child of H1
 		const h2Items = await provider.getChildren(rootItems[0]);
 		assert.strictEqual(h2Items.length, 1);
 		assert.strictEqual(h2Items[0].label, 'H2 Heading');
 		assert.strictEqual(h2Items[0].level, 2);
-		assert.strictEqual(h2Items[0].line, 1);
+		assert.strictEqual(h2Items[0].range.start.line, 1);
 		
 		// H3 is child of H2
 		const h3Items = await provider.getChildren(h2Items[0]);
 		assert.strictEqual(h3Items.length, 1);
 		assert.strictEqual(h3Items[0].label, 'H3 Heading');
 		assert.strictEqual(h3Items[0].level, 3);
-		assert.strictEqual(h3Items[0].line, 2);
+		assert.strictEqual(h3Items[0].range.start.line, 2);
 	});
 
 	test('Should parse all heading levels (H1-H6)', async () => {
@@ -222,8 +222,8 @@ Line 3`;
 		const items = await provider.getChildren();
 		
 		assert.strictEqual(items.length, 2);
-		assert.strictEqual(items[0].endLine, 2, 'Section 1 should end at line 2 (before Section 2)');
-		assert.strictEqual(items[1].endLine, 4, 'Section 2 should end at last line');
+		assert.strictEqual(items[0].range.end.line, 2, 'Section 1 should end at line 2 (before Section 2)');
+		assert.strictEqual(items[1].range.end.line, 4, 'Section 2 should end at last line');
 	});
 });
 
