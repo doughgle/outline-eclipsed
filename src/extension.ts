@@ -39,11 +39,11 @@ export function activate(context: vscode.ExtensionContext) {
 	// Update tree view message based on active editor
 	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined) => {
 		if (!editor) {
-			treeView.message = 'No editor active';
+			treeView.description = 'No editor active';
 		} else if (editor.document.languageId !== 'markdown') {
-			treeView.message = 'The active editor cannot provide outline information.';
+			treeView.description = `"${editor.document.languageId}" not yet supported in Outline Eclipsed.`;
 		} else {
-			treeView.message = undefined; // Clear message for markdown files
+			treeView.description = undefined; // Clear message for markdown files
 		}
 	};
 
