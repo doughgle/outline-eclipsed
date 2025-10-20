@@ -6,7 +6,7 @@
 
 Outline Eclipsed is a VS Code extension that provides a custom tree view for navigating and reorganizing code structure. Unlike the built-in Outline View (which is read-only), Outline Eclipsed allows you to **drag and drop** outline items to reorder sections in your files.
 
-### Current Status: PI-2 (Hierarchical Tree View)
+### Current Status: PI-3 (Basic Drag & Drop)
 
 **What Works Now:**
 - ✅ Extension activates and shows tree view
@@ -22,16 +22,19 @@ Outline Eclipsed is a VS Code extension that provides a custom tree view for nav
 - ✅ Supports untitled markdown documents
 - ✅ Responds to language mode changes (plaintext → markdown)
 - ✅ Handles edge cases (skipped levels, multiple roots, deep nesting)
+- ✅ Select full section text via `selectItem` command
+- ✅ Drag and drop headings to reorder sections
+- ✅ Text movement preserves section content
 
 **Coming Next:**
-- 🔲 Double-click tree view heading selects whole block of text in editor
+- 🔲 Nested heading drag & drop with proper hierarchy handling
 
 ## Product Increments Roadmap
 
 - ✅ **PI-0**: Extension Skeleton Setup
 - ✅ **PI-1**: Basic TreeView for Markdown (Flat List)
 - ✅ **PI-2**: Hierarchical Tree Structure with Expand/Collapse
-- 🔲 **PI-3**: Basic Drag & Drop (Flat Structure)
+- ✅ **PI-3**: Basic Drag & Drop - select range and moves text
 - 🔲 **PI-4**: Nested Heading Drag & Drop
 - 🔲 **PI-5**: Multi-Select Drag & Drop
 - 🔲 **PI-6**: Configuration Options
@@ -65,6 +68,8 @@ npm run lint
 7. **Test selection sync**: Move cursor in editor, watch tree view highlight the current heading
 8. **Test real-time updates**: Edit the document and verify tree refreshes
 9. **Test nested selection**: Move cursor into nested heading content, verify child heading is highlighted (not parent)
+10. **Test text selection**: Execute `outlineEclipsed.selectItem` command to select a full section
+11. **Test drag & drop**: Drag a heading in the tree view and drop it at a different position to reorder sections
 
 ### Architecture
 
@@ -83,6 +88,12 @@ npm run lint
 - `extension.ts` - Main activation logic
   - PI-2: Syncs tree view selection with editor cursor position
   - PI-2 Refactor: Accesses line numbers via `item.selectionRange.start.line`
+  - PI-3: Registers `selectItem` and `moveSection` commands
+  - PI-3: Integrates TreeDragAndDropController
+- `TreeDragAndDropController` - Handles drag and drop operations
+  - PI-3: Serializes/deserializes OutlineItem data for drag & drop
+  - PI-3: Implements text movement logic (cut from source, paste at target)
+  - PI-3: Supports dropping before target or at end of document
 
 **PI-2 Refactoring (DocumentSymbol API):**
 Refactored to use VS Code's DocumentSymbol-compatible Range semantics instead of simple line numbers. This provides:

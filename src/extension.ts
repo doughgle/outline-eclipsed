@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { MarkdownOutlineProvider } from './markdownOutlineProvider';
+import { TreeDragAndDropController } from './treeDragAndDropController';
 
 // Export tree view for testing purposes (PI-2)
 export let outlineTreeView: vscode.TreeView<any> | undefined;
@@ -21,11 +22,15 @@ export function activate(context: vscode.ExtensionContext) {
 	// Future: Factory pattern to create providers based on language
 	const markdownProvider = new MarkdownOutlineProvider();
 
+	// PI-3: Create drag and drop controller
+	const dragDropController = new TreeDragAndDropController();
+
 	// Register the tree view in the Explorer - always visible like default Outline
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: markdownProvider,
 		showCollapseAll: true,
-		canSelectMany: false // PI-0: Single selection only, multi-select in PI-5
+		canSelectMany: false, // PI-0: Single selection only, multi-select in PI-5
+		dragAndDropController: dragDropController // PI-3: Enable drag and drop
 	});
 	
 	// Export tree view for testing (PI-2)
@@ -51,6 +56,40 @@ export function activate(context: vscode.ExtensionContext) {
 				editor.selection = new vscode.Selection(position, position);
 				editor.revealRange(new vscode.Range(position, position));
 			}
+		})
+	);
+
+	// PI-3: Register command to select full section range (double-click behavior)
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.selectItem', (line: number) => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor || editor.document.languageId !== 'markdown') {
+				return;
+			}
+			
+			// Find the outline item at this line
+			const item = markdownProvider.findItemAtLine(line);
+			if (item) {
+				// Select the full range of the section
+				const selection = new vscode.Selection(
+					item.range.start,
+					item.range.end
+				);
+				editor.selection = selection;
+				editor.revealRange(item.range);
+			}
+		})
+	);
+
+	// PI-3: Register command to move section text (for testing and programmatic use)
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.moveSection', async (sourceStartLine: number, targetLine: number) => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor || editor.document.languageId !== 'markdown') {
+				return false;
+			}
+			
+			return await dragDropController.moveSection(editor, sourceStartLine, targetLine);
 		})
 	);
 

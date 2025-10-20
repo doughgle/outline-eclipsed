@@ -363,3 +363,96 @@ suite('PI-2: Tree View Selection Sync Tests', () => {
 		assert.ok(extension?.isActive, 'Extension should be active');
 	});
 });
+
+suite('PI-3: Text Selection Tests', () => {
+
+	test('Double-click command should select full section range in editor', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const content = `# Section 1
+Content line 1
+Content line 2
+
+# Section 2
+Content line 3`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Execute selectItem command for first heading (lines 0-3)
+		await vscode.commands.executeCommand('outlineEclipsed.selectItem', 0);
+		await new Promise(resolve => setTimeout(resolve, 100));
+
+		// Verify selection matches the full section range
+		const selection = editor.selection;
+		assert.strictEqual(selection.start.line, 0, 'Selection should start at line 0');
+		assert.strictEqual(selection.start.character, 0, 'Selection should start at character 0');
+		assert.strictEqual(selection.end.line, 3, 'Selection should end at line 3');
+		// The end character should be at the end of line 2 (last content line before blank line)
+		assert.ok(selection.end.character >= 0, 'Selection end character should be valid');
+	});
+
+	test('SelectItem command should be registered', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+
+		const commands = await vscode.commands.getCommands(true);
+		const hasSelectCommand = commands.includes('outlineEclipsed.selectItem');
+		
+		assert.ok(hasSelectCommand, 'outlineEclipsed.selectItem command should be registered');
+	});
+});
+
+suite('PI-3: Drag & Drop Text Movement Tests', () => {
+
+	test('Should move section text when dropping at different position', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const originalContent = `# Section 1
+Content 1
+
+# Section 2
+Content 2
+
+# Section 3
+Content 3`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: originalContent,
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Simulate moving Section 1 (lines 0-2) after Section 2 (drop before Section 3)
+		// Execute moveSection command with source and target line numbers
+		await vscode.commands.executeCommand('outlineEclipsed.moveSection', 0, 6);
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		const newContent = editor.document.getText();
+		
+		// Expected: Section 2 should now be first, then Section 1, then Section 3
+		const lines = newContent.split('\n');
+		assert.strictEqual(lines[0], '# Section 2', 'Section 2 should be first');
+		assert.strictEqual(lines[3], '# Section 1', 'Section 1 should be second');
+		assert.strictEqual(lines[6], '# Section 3', 'Section 3 should be last');
+	});
+
+	test('MoveSection command should be registered', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+
+		const commands = await vscode.commands.getCommands(true);
+		const hasMoveCommand = commands.includes('outlineEclipsed.moveSection');
+		
+		assert.ok(hasMoveCommand, 'outlineEclipsed.moveSection command should be registered');
+	});
+});
