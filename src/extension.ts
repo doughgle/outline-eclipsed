@@ -174,6 +174,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	context.subscriptions.push(treeView);
+	context.subscriptions.push(dragDropController); // PI-5: Dispose controller on deactivate
 	
 	console.log('Markdown Outline Reorder extension activated successfully (PI-0)');
 }

@@ -6,7 +6,7 @@
 
 Outline Eclipsed is a VS Code extension that provides a custom tree view for navigating and reorganizing code structure. Unlike the built-in Outline View (which is read-only), Outline Eclipsed allows you to **drag and drop** outline items to reorder sections in your files.
 
-### Current Status: PI-4 (Nested Heading Drag & Drop)
+### Current Status: PI-5 (Visual Feedback - Highlight Moved Text)
 
 **What Works Now:**
 - ✅ Extension activates and shows tree view
@@ -27,6 +27,10 @@ Outline Eclipsed is a VS Code extension that provides a custom tree view for nav
 - ✅ Text movement preserves section content
 - ✅ Parent headings move with all their children
 - ✅ Nested sections (H1 → H2 → H3) move as a unit
+- ✅ Moved text highlights in editor for 3 seconds (visual feedback)
+- ✅ Editor auto-scrolls to reveal moved section (centered in viewport)
+- ✅ Highlight uses theme-aware colors (find match highlighting)
+- ✅ Focus stays in tree view during drag & drop (no interruption)
 
 **Coming Next:**
 - 🔲 Multi-select drag & drop for moving multiple sections at once
@@ -38,8 +42,9 @@ Outline Eclipsed is a VS Code extension that provides a custom tree view for nav
 - ✅ **PI-2**: Hierarchical Tree Structure with Expand/Collapse
 - ✅ **PI-3**: Basic Drag & Drop - select range and moves text
 - ✅ **PI-4**: Nested Heading Drag & Drop - children move with parents
-- 🔲 **PI-5**: Multi-Select Drag & Drop
-- 🔲 **PI-6**: Configuration Options
+- ✅ **PI-5**: Visual Feedback - highlight moved text without changing focus
+- 🔲 **PI-6**: Multi-Select Drag & Drop
+- 🔲 **PI-7**: Configuration Options
 
 ## Development
 
@@ -72,6 +77,7 @@ npm run lint
 9. **Test nested selection**: Move cursor into nested heading content, verify child heading is highlighted (not parent)
 10. **Test text selection**: Execute `outlineEclipsed.selectItem` command to select a full section
 11. **Test drag & drop**: Drag a heading in the tree view and drop it at a different position to reorder sections
+12. **Test visual feedback**: After dragging, observe the editor auto-scrolls to the moved section and highlights it for 3 seconds (see `docs/PI-5-HIGHLIGHT-TEST.md`)
 
 ### Architecture
 

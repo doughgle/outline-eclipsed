@@ -13,6 +13,52 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	dropMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 	dragMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 
+	// PI-5: Decoration type for highlighting moved text
+	private highlightDecorationType: vscode.TextEditorDecorationType;
+	private highlightTimeout: NodeJS.Timeout | undefined;
+
+	constructor() {
+		// Create a subtle highlight decoration
+		this.highlightDecorationType = vscode.window.createTextEditorDecorationType({
+			backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
+			border: '1px solid',
+			borderColor: new vscode.ThemeColor('editor.findMatchBorder'),
+			isWholeLine: true
+		});
+	}
+
+	/**
+	 * PI-5: Clean up resources
+	 */
+	dispose(): void {
+		if (this.highlightTimeout) {
+			clearTimeout(this.highlightTimeout);
+		}
+		this.highlightDecorationType.dispose();
+	}
+
+	/**
+	 * PI-5: Highlight the moved text temporarily and scroll to reveal it
+	 */
+	private highlightMovedText(editor: vscode.TextEditor, range: vscode.Range): void {
+		// Clear any existing highlight timeout
+		if (this.highlightTimeout) {
+			clearTimeout(this.highlightTimeout);
+		}
+
+		// PI-5: Scroll to reveal the moved section (without changing focus)
+		editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+
+		// Apply the highlight decoration
+		editor.setDecorations(this.highlightDecorationType, [range]);
+
+		// Clear the highlight after 3 seconds
+		this.highlightTimeout = setTimeout(() => {
+			editor.setDecorations(this.highlightDecorationType, []);
+			this.highlightTimeout = undefined;
+		}, 3000);
+	}
+
 	/**
 	 * PI-3/PI-4: Move a section from source line to target line
 	 * This is exposed as a command for testing and programmatic access
@@ -74,6 +120,17 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			const success = await editor.edit(editBuilder => {
 				editBuilder.replace(fullRange, newContent);
 			});
+
+			if (success) {
+				// PI-5: Highlight the moved section at its new position
+				const newRange = new vscode.Range(
+					insertPos,
+					0,
+					insertPos + sectionLines.length - 1,
+					sectionLines[sectionLines.length - 1].length
+				);
+				this.highlightMovedText(editor, newRange);
+			}
 
 			console.log(`PI-4: Move operation ${success ? 'succeeded' : 'failed'}`);
 			return success;
