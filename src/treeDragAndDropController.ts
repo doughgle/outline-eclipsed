@@ -14,7 +14,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	dragMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 
 	/**
-	 * PI-3: Move a section from source line to target line
+	 * PI-3/PI-4: Move a section from source line to target line
 	 * This is exposed as a command for testing and programmatic access
 	 */
 	async moveSection(
@@ -25,96 +25,141 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		try {
 			const document = editor.document;
 			
-			// Find the source item to get its full range
+			// Find the source item to get its full range (PI-4: includes children)
 			const sourceItem = this.findItemAtLine(document, sourceStartLine);
 			if (!sourceItem) {
-				console.error(`PI-3: Could not find source item at line ${sourceStartLine}`);
+				console.error(`PI-4: Could not find source item at line ${sourceStartLine}`);
 				return false;
 			}
 
-			console.log(`PI-3: Moving section from lines ${sourceItem.range.start.line}-${sourceItem.range.end.line} to line ${targetLine}`);
+			console.log(`PI-4: Moving section from lines ${sourceItem.range.start.line}-${sourceItem.range.end.line} to line ${targetLine}`);
 
-			// Extract the text from the source range (including trailing newline)
-			const sourceRange = new vscode.Range(
-				sourceItem.range.start.line, 
-				0,
-				sourceItem.range.end.line + 1, // Include the newline after last line
-				0
+			// PI-4: Simple approach - work with document as array of lines
+			const allLines = document.getText().split('\n');
+			
+			// Extract the section lines (including any trailing blank line)
+			const sourceStart = sourceItem.range.start.line;
+			const sourceEnd = sourceItem.range.end.line;
+			let actualEnd = sourceEnd;
+			
+			// Include trailing blank line if it exists
+			if (actualEnd + 1 < allLines.length && allLines[actualEnd + 1].trim() === '') {
+				actualEnd++;
+			}
+			
+			const sectionLines = allLines.slice(sourceStart, actualEnd + 1);
+			
+			// Remove the section from its current position
+			allLines.splice(sourceStart, actualEnd - sourceStart + 1);
+			
+			// Calculate new insertion position (adjusted if we removed lines before it)
+			let insertPos = targetLine;
+			if (targetLine > sourceStart) {
+				insertPos = targetLine - (actualEnd - sourceStart + 1);
+			}
+			
+			// Clamp to valid range
+			insertPos = Math.max(0, Math.min(insertPos, allLines.length));
+			
+			// Insert the section at new position
+			allLines.splice(insertPos, 0, ...sectionLines);
+			
+			// Replace entire document content
+			const newContent = allLines.join('\n');
+			const fullRange = new vscode.Range(
+				document.lineAt(0).range.start,
+				document.lineAt(document.lineCount - 1).range.end
 			);
-			const sourceText = document.getText(sourceRange);
 			
-			// Calculate insertion position before we modify the document
-			let insertLine = targetLine;
-			
-			// Perform the edit as a single transaction
 			const success = await editor.edit(editBuilder => {
-				// If moving down, insert first, then delete
-				// If moving up, delete first, then insert
-				if (targetLine > sourceItem.range.end.line) {
-					// Moving down: insert at target first
-					editBuilder.insert(new vscode.Position(insertLine, 0), sourceText);
-					// Then delete from source
-					editBuilder.delete(sourceRange);
-				} else {
-					// Moving up: delete from source first
-					editBuilder.delete(sourceRange);
-					// Then insert at target (position unchanged since we deleted below)
-					editBuilder.insert(new vscode.Position(insertLine, 0), sourceText);
-				}
+				editBuilder.replace(fullRange, newContent);
 			});
 
-			console.log(`PI-3: Move operation ${success ? 'succeeded' : 'failed'}`);
+			console.log(`PI-4: Move operation ${success ? 'succeeded' : 'failed'}`);
 			return success;
 		} catch (error) {
-			console.error('PI-3: Error moving section:', error);
+			console.error('PI-4: Error moving section:', error);
 			return false;
 		}
 	}
 
 	/**
-	 * Helper to find outline item at a given line
-	 * TODO: This duplicates logic from OutlineProvider - consider refactoring
+	 * PI-4: Helper to find outline item at a given line with full range including children
+	 * This calculates the range that includes all descendant headings
 	 */
 	private findItemAtLine(document: vscode.TextDocument, lineNumber: number): OutlineItem | undefined {
-		// Simple markdown heading parser for movement logic
-		const items: OutlineItem[] = [];
+		// Parse all headings with their levels
+		interface HeadingInfo {
+			line: number;
+			level: number;
+			text: string;
+		}
 		
+		const headings: HeadingInfo[] = [];
 		for (let i = 0; i < document.lineCount; i++) {
 			const line = document.lineAt(i);
 			const match = line.text.match(/^(#{1,6})\s+(.+)$/);
-			
 			if (match) {
-				const level = match[1].length;
-				const text = match[2].trim();
-				
-				// Find end of this section
-				let endLine = i;
-				for (let j = i + 1; j < document.lineCount; j++) {
-					const nextLine = document.lineAt(j);
-					const nextMatch = nextLine.text.match(/^#{1,6}\s+/);
-					if (nextMatch) {
-						endLine = j - 1;
-						break;
-					}
-					endLine = j;
-				}
-				
-				const selectionRange = line.range;
-				const range = new vscode.Range(i, 0, endLine, document.lineAt(endLine).text.length);
-				const item = new OutlineItem(text, level, range, selectionRange);
-				items.push(item);
+				headings.push({
+					line: i,
+					level: match[1].length,
+					text: match[2].trim()
+				});
 			}
 		}
 		
-		// Find item containing the line
-		const position = new vscode.Position(lineNumber, 0);
-		for (const item of items) {
-			if (item.range.contains(position)) {
-				return item;
+		// Find the heading at or before the requested line
+		let targetHeading: HeadingInfo | undefined;
+		for (const heading of headings) {
+			if (heading.line === lineNumber) {
+				targetHeading = heading;
+				break;
 			}
 		}
 		
-		return undefined;
+		if (!targetHeading) {
+			console.error(`PI-4: No heading found at line ${lineNumber}`);
+			return undefined;
+		}
+		
+		// PI-4: Calculate end line including all children (descendants)
+		// A child is a heading with level > parent.level that appears before any heading with level <= parent.level
+		const targetIndex = headings.findIndex(h => h.line === targetHeading!.line);
+		let endLine = targetHeading.line;
+		
+		// Look for the next heading at the same level or higher (lower number = higher level)
+		for (let i = targetIndex + 1; i < headings.length; i++) {
+			if (headings[i].level <= targetHeading.level) {
+				// Found a sibling or higher level heading - stop before it
+				endLine = headings[i].line - 1;
+				break;
+			}
+			// This is a child (higher level number) - include it
+			endLine = document.lineCount - 1; // Extend to end for now
+		}
+		
+		// If we didn't find a sibling, extend to end of document or last line with content
+		if (endLine === targetHeading.line) {
+			endLine = document.lineCount - 1;
+		}
+		
+		// Trim trailing blank lines
+		while (endLine > targetHeading.line && document.lineAt(endLine).text.trim() === '') {
+			endLine--;
+		}
+		
+		const headingLine = document.lineAt(targetHeading.line);
+		const selectionRange = headingLine.range;
+		const range = new vscode.Range(
+			targetHeading.line, 
+			0, 
+			endLine, 
+			document.lineAt(endLine).text.length
+		);
+		
+		console.log(`PI-4: Found item "${targetHeading.text}" at line ${targetHeading.line}, range extends to line ${endLine} (includes children)`);
+		
+		return new OutlineItem(targetHeading.text, targetHeading.level, range, selectionRange);
 	}
 
 	/**

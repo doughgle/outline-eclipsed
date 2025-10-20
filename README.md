@@ -6,7 +6,7 @@
 
 Outline Eclipsed is a VS Code extension that provides a custom tree view for navigating and reorganizing code structure. Unlike the built-in Outline View (which is read-only), Outline Eclipsed allows you to **drag and drop** outline items to reorder sections in your files.
 
-### Current Status: PI-3 (Basic Drag & Drop)
+### Current Status: PI-4 (Nested Heading Drag & Drop)
 
 **What Works Now:**
 - ✅ Extension activates and shows tree view
@@ -25,9 +25,11 @@ Outline Eclipsed is a VS Code extension that provides a custom tree view for nav
 - ✅ Select full section text via `selectItem` command
 - ✅ Drag and drop headings to reorder sections
 - ✅ Text movement preserves section content
+- ✅ Parent headings move with all their children
+- ✅ Nested sections (H1 → H2 → H3) move as a unit
 
 **Coming Next:**
-- 🔲 Nested heading drag & drop with proper hierarchy handling
+- 🔲 Multi-select drag & drop for moving multiple sections at once
 
 ## Product Increments Roadmap
 
@@ -35,7 +37,7 @@ Outline Eclipsed is a VS Code extension that provides a custom tree view for nav
 - ✅ **PI-1**: Basic TreeView for Markdown (Flat List)
 - ✅ **PI-2**: Hierarchical Tree Structure with Expand/Collapse
 - ✅ **PI-3**: Basic Drag & Drop - select range and moves text
-- 🔲 **PI-4**: Nested Heading Drag & Drop
+- ✅ **PI-4**: Nested Heading Drag & Drop - children move with parents
 - 🔲 **PI-5**: Multi-Select Drag & Drop
 - 🔲 **PI-6**: Configuration Options
 

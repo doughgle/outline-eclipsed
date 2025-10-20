@@ -456,3 +456,117 @@ Content 3`;
 		assert.ok(hasMoveCommand, 'outlineEclipsed.moveSection command should be registered');
 	});
 });
+
+suite('PI-4: Nested Heading Drag & Drop Tests', () => {
+
+	test('Should move parent heading with all its children', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const originalContent = `# Parent 1
+Content for parent 1
+
+## Child 1.1
+Content for child 1.1
+
+## Child 1.2
+Content for child 1.2
+
+# Parent 2
+Content for parent 2`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: originalContent,
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Move Parent 1 (with its children) after Parent 2
+		// Parent 1 is at line 0, Parent 2 is at line 9
+		await vscode.commands.executeCommand('outlineEclipsed.moveSection', 0, 11);
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		const newContent = editor.document.getText();
+		const lines = newContent.split('\n');
+		
+		// Expected: Parent 2 first, then Parent 1 with all its children
+		assert.strictEqual(lines[0], '# Parent 2', 'Parent 2 should be first');
+		assert.strictEqual(lines[2], '# Parent 1', 'Parent 1 should be second');
+		assert.strictEqual(lines[5], '## Child 1.1', 'Child 1.1 should move with Parent 1');
+		assert.strictEqual(lines[8], '## Child 1.2', 'Child 1.2 should move with Parent 1');
+	});
+
+	test('Should move H2 with its H3 children', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const originalContent = `# Main
+Content
+
+## Section A
+Content A
+
+### Subsection A.1
+Content A.1
+
+## Section B
+Content B`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: originalContent,
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Move Section A (line 3) with its H3 child after Section B
+		await vscode.commands.executeCommand('outlineEclipsed.moveSection', 3, 12);
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		const newContent = editor.document.getText();
+		const lines = newContent.split('\n');
+		
+		// Expected: Main, then Section B, then Section A with Subsection A.1
+		assert.strictEqual(lines[0], '# Main', 'Main should be first');
+		assert.strictEqual(lines[3], '## Section B', 'Section B should be first child');
+		assert.strictEqual(lines[5], '## Section A', 'Section A should be second child');
+		assert.strictEqual(lines[8], '### Subsection A.1', 'Subsection A.1 should move with Section A');
+	});
+
+	test('Should not move children when dragging a leaf node', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const originalContent = `# Parent
+Content
+
+## Child 1
+Content 1
+
+## Child 2
+Content 2`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: originalContent,
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Move Child 1 (leaf node) after Child 2
+		await vscode.commands.executeCommand('outlineEclipsed.moveSection', 3, 9);
+		await new Promise(resolve => setTimeout(resolve, 200));
+
+		const newContent = editor.document.getText();
+		const lines = newContent.split('\n');
+		
+		// Expected: Parent, Child 2, Child 1
+		assert.strictEqual(lines[0], '# Parent');
+		assert.strictEqual(lines[3], '## Child 2', 'Child 2 should be first child');
+		assert.strictEqual(lines[5], '## Child 1', 'Child 1 should be second child');
+	});
+});
