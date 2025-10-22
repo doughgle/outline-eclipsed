@@ -2,7 +2,7 @@
   "name": "outline-eclipsed",
   "displayName": "Outline Eclipsed",
   "description": "Outline view that outshines the default - drag and drop to rearrange your code sections with ease!",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "douglashellinger",
   "author": {
     "name": "Douglas Hellinger"
