@@ -4,11 +4,34 @@
   "description": "Outline view that outshines the default - drag and drop to rearrange your code sections with ease!",
   "version": "0.1.0",
   "publisher": "douglashellinger",
+  "author": {
+    "name": "Douglas Hellinger"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/doughgle/outline-eclipsed#readme",
+  "bugs": {
+    "url": "https://github.com/doughgle/outline-eclipsed/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doughgle/outline-eclipsed.git"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/doughgle"
+  },
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "outline",
+    "markdown",
+    "drag-drop",
+    "reorder",
+    "tree-view",
+    "navigation"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -17,7 +40,8 @@
       "explorer": [
         {
           "id": "outlineEclipsed",
-          "name": "Outline Eclipsed"
+          "name": "Outline Eclipsed",
+          "icon": "icon.png"
         }
       ]
     },

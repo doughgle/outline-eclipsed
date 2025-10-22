@@ -79,37 +79,6 @@ npm run lint
 11. **Test drag & drop**: Drag a heading in the tree view and drop it at a different position to reorder sections
 12. **Test visual feedback**: After dragging, observe the editor auto-scrolls to the moved section and highlights it for 3 seconds (see `docs/PI-5-HIGHLIGHT-TEST.md`)
 
-### Architecture
-
-**Generic Design:**
-- `OutlineItem` - Generic tree item model (not markdown-specific)
-  - PI-2: Added parent reference for hierarchical navigation
-  - PI-2 Refactor: Uses DocumentSymbol-compatible Range semantics (`range` = full section extent, `selectionRange` = heading text only) for precise position tracking
-- `OutlineProvider` - Abstract base class for language providers
-  - PI-2: Implements `getParent()` (required for TreeView.reveal())
-  - PI-2: Implements `findItemAtLine()` for selection sync
-  - PI-2 Refactor: Uses `Range.contains()` for precise position checking
-- `MarkdownOutlineProvider` - Markdown-specific implementation
-  - PI-1: Parses headings into flat list
-  - PI-2: Builds hierarchical structure with parent-child relationships
-  - PI-2 Refactor: Creates vscode.Range objects during parsing for DocumentSymbol compatibility
-- `extension.ts` - Main activation logic
-  - PI-2: Syncs tree view selection with editor cursor position
-  - PI-2 Refactor: Accesses line numbers via `item.selectionRange.start.line`
-  - PI-3: Registers `selectItem` and `moveSection` commands
-  - PI-3: Integrates TreeDragAndDropController
-- `TreeDragAndDropController` - Handles drag and drop operations
-  - PI-3: Serializes/deserializes OutlineItem data for drag & drop
-  - PI-3: Implements text movement logic (cut from source, paste at target)
-  - PI-3: Supports dropping before target or at end of document
-
-**PI-2 Refactoring (DocumentSymbol API):**
-Refactored to use VS Code's DocumentSymbol-compatible Range semantics instead of simple line numbers. This provides:
-- More precise position tracking with character-level granularity
-- Better preparation for PI-3 drag & drop (accurate text range extraction)
-- Alignment with VS Code's standard outline APIs
-- Simplified test suite (reduced from 35+ to 6 focused tests)
-
 **Future Extensions:**
 - JavaScriptOutlineProvider
 - TypeScriptOutlineProvider

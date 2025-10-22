@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Eclipse-style gradient background -->
+  <defs>
+    <radialGradient id="eclipseGradient" cx="40%" cy="35%">
+      <stop offset="0%" style="stop-color:#6B4FBB;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#4A2F8F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2A1550;stop-opacity:1" />
+    </radialGradient>
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#B8A3FF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#7C5FD9;stop-opacity:0.3" />
+    </linearGradient>
+    <!-- Drop shadow filter for text -->
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.5"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="62" fill="url(#eclipseGradient)"/>
+  
+  <!-- Eclipse ring with glow effect -->
+  <ellipse cx="64" cy="64" rx="50" ry="48" 
+           fill="none" 
+           stroke="url(#glowGradient)" 
+           stroke-width="3"
+           opacity="0.6"/>
+  
+  <!-- Main eclipse ring -->
+  <ellipse cx="64" cy="64" rx="48" ry="46" 
+           fill="none" 
+           stroke="#E8DCFF" 
+           stroke-width="2.5"/>
+  
+  <!-- Eclipse light effect (crescent) -->
+  <path d="M 30,40 Q 25,64 30,88" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="2" 
+        opacity="0.4"/>
+  
+  <!-- Four horizontal lines behind text (representing outline structure) -->
+  <line x1="30" y1="52" x2="98" y2="52" 
+        stroke="#E8DCFF" 
+        stroke-width="1.5" 
+        opacity="0.25"/>
+  <line x1="30" y1="60" x2="98" y2="60" 
+        stroke="#E8DCFF" 
+        stroke-width="1.5" 
+        opacity="0.25"/>
+  <line x1="30" y1="68" x2="98" y2="68" 
+        stroke="#E8DCFF" 
+        stroke-width="1.5" 
+        opacity="0.25"/>
+  <line x1="30" y1="76" x2="98" y2="76" 
+        stroke="#E8DCFF" 
+        stroke-width="1.5" 
+        opacity="0.25"/>
+  
+  <!-- "OUTLINE" text with drop shadow -->
+  <text x="64" y="68" 
+        font-family="Arial, sans-serif" 
+        font-size="14" 
+        font-weight="bold" 
+        fill="#FFFFFF" 
+        text-anchor="middle"
+        letter-spacing="1"
+        filter="url(#dropShadow)">OUTLINE</text>
+  
+  <!-- Subtle highlight on top -->
+  <ellipse cx="64" cy="30" rx="25" ry="12" 
+           fill="#FFFFFF" 
+           opacity="0.15"/>
+</svg>
