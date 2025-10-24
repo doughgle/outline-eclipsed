@@ -1,3 +1,4 @@
+![logo](icon.png)
 # Outline Eclipsed
 
 _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to reorganize your document structure.
