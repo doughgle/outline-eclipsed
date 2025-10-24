@@ -4,6 +4,7 @@
   "description": "Outline view that outshines the default - drag and drop to rearrange your code sections with ease!",
   "version": "0.2.0",
   "publisher": "douglashellinger",
+  "icon": "icon.png",
   "author": {
     "name": "Douglas Hellinger"
   },
