@@ -71,7 +71,7 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 ### [Roadmap](https://github.com/doughgle/outline-eclipsed/issues)
 
 - ✅ **PI-0-5**: Markdown outline with drag & drop and visual feedback
-- 🔲 **PI-6**: Multi-select drag & drop
+- ✅ **PI-6**: Multi-select drag & drop
 - 🔲 **PI-7**: Configuration options
 - 🔲 **Future**: Support for JavaScript, TypeScript, Python, and other languages
 
