@@ -13,3 +13,4 @@ test-fixtures
 .github/workflows/**
 docs
 out/test
+*.svg
