@@ -4,11 +4,25 @@ This document contains test scenarios for validating multi-select drag and drop 
 
 **Status**: Iteration 2 Complete - Full multi-select drag & drop with visual feedback
 
+**Instructions**: 
+1. Open the Outline Eclipsed tree view in the Explorer panel
+2. For each test, use Ctrl+Click (Cmd+Click on Mac) to select multiple items
+3. Drag selected items to test the behavior
+4. Verify the results as specified in each test section
+
 ---
 
-## Test 1: Basic Multi-Select with Ctrl/Cmd+Click
+# TEST 1: Basic Multi-Select
 
-### Setup
+## Instructions
+1. Click "Section A" to select it
+2. Hold Ctrl (Cmd on Mac) and click "Section C" to add to selection
+3. Verify: Both items show blue highlight in tree view
+
+**Expected**: Multi-select works with Ctrl/Cmd+Click
+
+---
+
 # Section A
 Content for section A goes here.
 
@@ -21,20 +35,21 @@ Content for section C goes here.
 # Section D
 Content for section D goes here.
 
-### Instructions
-1. Open the Outline Eclipsed tree view in the Explorer panel
-2. Click on "Section A" to select it
-3. Hold Ctrl (or Cmd on Mac) and click "Section C" to add it to selection
-4. Both A and C should now be selected in the tree view
-5. Verify: Tree view shows both items selected with blue highlight
+---
 
-**Expected Result**: Multi-select works correctly with Ctrl/Cmd+Click
+# TEST 2: Filter Redundant Items
+
+## Instructions
+1. Expand "Parent Section" in tree view
+2. Ctrl+Click to select: "Parent Section", "Child Section 1", and "Another Root Section"
+3. Drag selection to end of document
+4. **Verify**: Only "Parent Section" (with ALL children) and "Another Root Section" move
+5. **Verify**: "Child Section 1" is NOT duplicated
+
+**Expected**: Child items filtered when parent is selected
 
 ---
 
-## Test 2: Filter Redundant Items (Parent + Child Selection)
-
-### Setup
 # Parent Section
 This is the parent content.
 
@@ -47,20 +62,19 @@ This is child 2 content.
 # Another Root Section
 Independent section content.
 
-### Instructions
-1. In the Outline Eclipsed tree view, expand "Parent Section"
-2. Ctrl+Click to select: "Parent Section", "Child Section 1", and "Another Root Section"
-3. Drag the selection to a new position (e.g., end of document)
-4. Verify: Only "Parent Section" (with all children) and "Another Root Section" move
-5. Verify: "Child Section 1" is NOT duplicated (it moves only as part of parent)
+---
 
-**Expected Result**: Redundant child items are filtered automatically
+# TEST 3: Sort by Document Position
+
+## Instructions
+1. Select in this order: "M Section", "Z Section", "A Section" (using Ctrl+Click)
+2. Drag to end of document
+3. **Verify**: Sections move in document order (Z, A, M), NOT selection order
+
+**Expected**: Items maintain document order, not selection order
 
 ---
 
-## Test 3: Sort by Document Position
-
-### Setup
 # Z Section
 Last alphabetically but first in document.
 
@@ -70,18 +84,27 @@ First alphabetically but second in document.
 # M Section
 Middle alphabetically and third in document.
 
-### Instructions
-1. Select sections in this order using Ctrl+Click: "M Section", "Z Section", "A Section"
-2. Drag to end of document
-3. Verify: Sections are moved in document order (Z, A, M), NOT selection order
+---
 
-**Expected Result**: Items are reordered by their document position, maintaining relative order
+# TEST 4: Nested Hierarchy
+
+## Instructions
+1. Expand tree completely
+2. Select "Outer", "Inner 1", and "Deep 1" (all three with Ctrl+Click)
+3. Drag selection after "Sibling"
+4. **Verify**: Only "Outer" moves (with all descendants)
+5. **Verify**: No content duplication
+6. **Verify**: "Inner 1" and "Deep 1" remain nested under "Outer"
+
+**Expected**: Deeply nested redundant items are filtered
 
 ---
 
-## Test 4: Nested Hierarchy Selection
+# Sibling
+Content sibling
 
-### Setup
+---
+
 # Outer
 Content outer
 
@@ -94,24 +117,19 @@ Content deep 1
 ## Inner 2
 Content inner 2
 
-# Sibling
-Content sibling
+# TEST 5: Non-Contiguous Selection
 
-### Instructions
-1. Expand the tree completely
-2. Select "Outer", "Inner 1", and "Deep 1" (all three using Ctrl+Click)
-3. Drag selection after "Sibling"
-4. Verify: Only "Outer" moves (with all descendants automatically included)
-5. Verify: No duplication of content
-6. Verify: "Inner 1" and "Deep 1" are still nested under "Outer" in new position
+## Instructions
+1. Select "First Section", "Third Section", and "Fifth Section" (Ctrl+Click)
+2. Drag to position before "Second Section"
+3. **Verify**: All three sections move together
+4. **Verify**: Final order is: First, Third, Fifth, Second, Fourth
+5. **Verify**: All three selections are highlighted for 3 seconds
 
-**Expected Result**: Deeply nested redundant items are filtered
+**Expected**: Multiple non-contiguous sections move with multi-highlighting
 
 ---
 
-## Test 5: Non-Contiguous Selection
-
-### Setup
 # First Section
 Content 1
 
@@ -127,38 +145,38 @@ Content 4
 # Fifth Section
 Content 5
 
-### Instructions
-1. Select "First Section" and "Third Section" and "Fifth Section" (using Ctrl+Click)
-2. Drag to position before "Second Section"
-3. Verify: All three sections move together to new position
-4. Verify: Final order is: First, Third, Fifth, Second, Fourth
-5. Verify: All three selected sections are highlighted after move (for 3 seconds)
+---
 
-**Expected Result**: Multiple non-contiguous sections move together with multi-section highlighting
+# TEST 6: Single Item Selection
+
+## Instructions
+1. Select only "Only Section" (single selection, no multi-select)
+2. Drag to end of document
+3. **Verify**: Works exactly like previous single-select behavior
+
+**Expected**: Single-select backward compatibility maintained
 
 ---
 
-## Test 6: Edge Case - Single Item Selection
-
-### Setup
 # Only Section
 Content here
 
 # Another Section
 More content
 
-### Instructions
-1. Select only "Only Section" (single selection, no multi-select)
-2. Drag to end of document
-3. Verify: Works exactly like previous single-select behavior
+---
 
-**Expected Result**: Single-select still works as before
+# TEST 7: All Items Selected
+
+## Instructions
+1. Select all three sections (Ctrl+Click each one)
+2. Drag to any position
+3. **Verify**: No errors, sections maintain same relative order
+
+**Expected**: Graceful handling of edge case
 
 ---
 
-## Test 7: Edge Case - All Items Selected
-
-### Setup
 # First
 Content
 
@@ -168,16 +186,9 @@ Content
 # Third
 Content
 
-### Instructions
-1. Select all three sections (Ctrl+Click each one)
-2. Drag to... anywhere
-3. Verify: Nothing breaks, sections remain in same relative order
-
-**Expected Result**: Graceful handling of "move all" scenario
-
 ---
 
-## Features Completed
+# Features Completed
 
 ✅ **Multi-select enabled**: Ctrl/Cmd+Click to select multiple items  
 ✅ **Automatic filtering**: Redundant child items removed when parent selected  
@@ -188,17 +199,19 @@ Content
 
 ---
 
-## Checklist
-
-- [ ] Test 1: Multi-select with Ctrl/Cmd+Click works
-- [ ] Test 2: Redundant parent+child filtered correctly
-- [ ] Test 3: Items sorted by document position
-- [ ] Test 4: Nested hierarchy filtered correctly
-- [ ] Test 5: Non-contiguous selections handled
-- [ ] Test 6: Single selection still works
-- [ ] Test 7: All items selection handled gracefully
+# Test Results
 
 **Date Tested**: _____________  
 **Tester**: _____________  
-**Result**: PASS / FAIL  
-**Notes**: ____________________________________
+
+| Test | Status | Notes |
+|------|--------|-------|
+| Test 1: Multi-select | ⬜ PASS / FAIL |  |
+| Test 2: Filter redundant | ⬜ PASS / FAIL |  |
+| Test 3: Document order | ⬜ PASS / FAIL |  |
+| Test 4: Nested hierarchy | ⬜ PASS / FAIL |  |
+| Test 5: Non-contiguous | ⬜ PASS / FAIL |  |
+| Test 6: Single selection | ⬜ PASS / FAIL |  |
+| Test 7: All items | ⬜ PASS / FAIL |  |
+
+**Overall Result**: ⬜ PASS / FAIL
