@@ -17,6 +17,14 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     protected currentDocument: vscode.TextDocument | undefined;
 
     /**
+     * PI-6: Getter for root items (excludes placeholders).
+     * Used by tests to verify parsing logic without UI enhancements.
+     */
+    get rootItems(): OutlineItem[] {
+        return this.items;
+    }
+
+    /**
      * Refreshes the tree view with the current document.
      * Pass undefined to clear the tree view.
      * 
@@ -56,7 +64,8 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     }
 
     /**
-     * Required by TreeDataProvider - returns children for given element
+     * Required by TreeDataProvider - returns children for given element.
+     * PI-6: Adds 2 placeholder items at end of root items for easy end-of-document drops.
      */
     getChildren(element?: OutlineItem): Thenable<OutlineItem[]> {
         if (!this.currentDocument) {
@@ -64,12 +73,50 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         }
 
         if (element) {
-            // Return children of the given item
+            // Return children of the given item (no placeholders for nested items)
             return Promise.resolve(element.children);
         } else {
-            // Return root level items
-            return Promise.resolve(this.items);
+            // PI-6: Add 1 placeholder item at end for drop zone
+            const placeholders = this.createPlaceholders();
+            return Promise.resolve([...this.items, ...placeholders]);
         }
+    }
+
+    /**
+     * PI-6: Creates placeholder item for end-of-document drop zone.
+     * Creates 1 empty item that appears at the end of the tree view.
+     * 
+     * @returns Array with 1 placeholder item
+     */
+    private createPlaceholders(): OutlineItem[] {
+        if (!this.currentDocument) {
+            return [];
+        }
+
+        const doc = this.currentDocument;
+        const endLine = doc.lineCount - 1;
+        const endChar = doc.lineAt(endLine).text.length;
+        
+        // Create range pointing to end of document
+        const range = new vscode.Range(endLine, endChar, endLine, endChar);
+        
+        // Create 1 placeholder item (1 blank line of drop space)
+        const placeholder = new OutlineItem(
+            '', // Empty label (invisible)
+            0,  // Level 0 (not a real heading)
+            range,
+            range,
+            [],
+            vscode.SymbolKind.Null
+        );
+        
+        // Remove icon to make it truly blank
+        placeholder.iconPath = undefined;
+        
+        // Mark as placeholder for identification
+        (placeholder as any).isPlaceholder = true;
+        
+        return [placeholder];
     }
 
     /**

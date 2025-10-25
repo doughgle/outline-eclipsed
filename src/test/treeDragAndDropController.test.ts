@@ -533,4 +533,43 @@ Content 5`;
 		assert.strictEqual(headings[3], '# Second', 'Second heading at position 3');
 		assert.strictEqual(headings[4], '# Fourth', 'Fourth heading at position 4');
 	});
+
+	test('Should handle drop on placeholder item as end-of-document drop', async () => {
+		// GIVEN: A document with sections
+		const content = `# First
+Content
+
+# Second
+Content`;
+
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'markdown'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+		const controller = new TreeDragAndDropController();
+		const dataTransfer = new vscode.DataTransfer();
+		
+		// WHEN: Dragging "First" section and dropping on undefined (placeholder behavior)
+		const dragData = JSON.stringify([{
+			label: 'First',
+			level: 1,
+			range: { start: { line: 0, character: 0 }, end: { line: 1, character: 7 } },
+			selectionRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 7 } }
+		}]);
+		
+		dataTransfer.set('application/vnd.code.tree.outlineeclipsed', new vscode.DataTransferItem(dragData));
+		
+		// Drop with target=undefined simulates dropping on placeholder
+		await controller.handleDrop(undefined, dataTransfer, {} as any);
+		
+		// THEN: Section should move to end
+		const newContent = editor.document.getText();
+		const lines = newContent.split('\n');
+		const headings = lines.filter(line => line.startsWith('#'));
+		
+		// "Second" should now be first, "First" at end
+		assert.strictEqual(headings[0], '# Second', 'Second should be first after move');
+		assert.strictEqual(headings[1], '# First', 'First should be at end');
+	});
 });
