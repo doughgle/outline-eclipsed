@@ -21,7 +21,7 @@ suite('MarkdownOutlineProvider - Parsing Tests', () => {
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		assert.strictEqual(items.length, 1, 'Should have exactly one heading');
 		assert.strictEqual(items[0].label, 'Heading 1', 'Heading text should be correct');
@@ -39,7 +39,7 @@ suite('MarkdownOutlineProvider - Parsing Tests', () => {
 		provider.refresh(document);
 		
 		// PI-2: Returns hierarchical structure, so root has only H1
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 1, 'Should have one root H1');
 		assert.strictEqual(rootItems[0].label, 'H1 Heading');
 		assert.strictEqual(rootItems[0].level, 1);
@@ -73,7 +73,7 @@ suite('MarkdownOutlineProvider - Parsing Tests', () => {
 		provider.refresh(document);
 		
 		// PI-2: Hierarchical - navigate down the tree
-		const h1 = await provider.getChildren();
+		const h1 = provider.rootItems;
 		assert.strictEqual(h1.length, 1);
 		assert.strictEqual(h1[0].level, 1);
 		
@@ -112,7 +112,7 @@ More content.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// PI-2: Only H1 at root
 		assert.strictEqual(rootItems.length, 1, 'Should have one root heading');
@@ -133,7 +133,7 @@ More content.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// PI-2: Hierarchical structure
 		assert.strictEqual(rootItems.length, 1, 'Should have one root');
@@ -155,7 +155,7 @@ More content.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		assert.strictEqual(items.length, 0, 'Should return empty array for empty document');
 	});
@@ -169,7 +169,7 @@ More text.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		assert.strictEqual(items.length, 0, 'Should return empty array when no headings');
 	});
@@ -184,7 +184,7 @@ More text.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		assert.strictEqual(items.length, 2, 'Should only find valid headings');
 		assert.strictEqual(items[0].label, 'Valid Heading');
@@ -199,7 +199,7 @@ More text.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 1);
 		assert.strictEqual(rootItems[0].label, 'Heading with spaces', 'Should trim whitespace');
 		
@@ -219,7 +219,7 @@ Line 3`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		assert.strictEqual(items.length, 2);
 		assert.strictEqual(items[0].range.end.line, 2, 'Section 1 should end at line 2 (before Section 2)');
@@ -239,7 +239,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 		});
 		
 		provider.refresh(markdownDoc);
-		let rootItems = await provider.getChildren();
+		let rootItems = provider.rootItems;
 		
 		// PI-2: Hierarchical - only H1 at root
 		assert.strictEqual(rootItems.length, 1, 'Should have 1 root heading');
@@ -252,7 +252,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 		
 		// Now refresh with undefined (simulating switch to non-markdown file)
 		provider.refresh(undefined);
-		rootItems = await provider.getChildren();
+		rootItems = provider.rootItems;
 		
 		assert.strictEqual(rootItems.length, 0, 'Should have 0 items after clearing with undefined');
 	});
@@ -266,7 +266,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 			language: 'markdown'
 		});
 		provider.refresh(doc1);
-		let rootItems = await provider.getChildren();
+		let rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 1, 'Should have 1 root item');
 		
 		let children = await provider.getChildren(rootItems[0]);
@@ -274,7 +274,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 		
 		// Cycle 2: Clear
 		provider.refresh(undefined);
-		rootItems = await provider.getChildren();
+		rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 0, 'Should be cleared');
 		
 		// Cycle 3: Parse different markdown
@@ -283,13 +283,13 @@ suite('MarkdownOutlineProvider - State Management', () => {
 			language: 'markdown'
 		});
 		provider.refresh(doc2);
-		rootItems = await provider.getChildren();
+		rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 1, 'Should have 1 new item');
 		assert.strictEqual(rootItems[0].label, 'Only One Heading');
 		
 		// Cycle 4: Clear again
 		provider.refresh(undefined);
-		rootItems = await provider.getChildren();
+		rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 0, 'Should be cleared again');
 	});
 
@@ -303,7 +303,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 		});
 		
 		provider.refresh(doc1);
-		let items = await provider.getChildren();
+		let items = provider.rootItems;
 		assert.strictEqual(items.length, 1);
 		assert.strictEqual(items[0].label, 'Document 1 Heading');
 		
@@ -314,7 +314,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 		});
 		
 		provider.refresh(doc2);
-		items = await provider.getChildren();
+		items = provider.rootItems;
 		assert.strictEqual(items.length, 1, 'Should have 1 root');
 		assert.strictEqual(items[0].label, 'Document 2 Heading');
 		
@@ -324,7 +324,7 @@ suite('MarkdownOutlineProvider - State Management', () => {
 		
 		// Back to Document 1
 		provider.refresh(doc1);
-		items = await provider.getChildren();
+		items = provider.rootItems;
 		assert.strictEqual(items.length, 1);
 		assert.strictEqual(items[0].label, 'Document 1 Heading');
 	});
@@ -346,7 +346,7 @@ suite('MarkdownOutlineProvider - Document Schemes', () => {
 		assert.strictEqual(untitledDoc.languageId, 'markdown', 'Document should be markdown');
 		
 		provider.refresh(untitledDoc);
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// PI-2: Hierarchical structure
 		assert.strictEqual(rootItems.length, 1, 'Should have 1 root heading');
@@ -370,7 +370,7 @@ suite('MarkdownOutlineProvider - Document Schemes', () => {
 		assert.strictEqual(untitledDoc.languageId, 'javascript');
 		
 		provider.refresh(untitledDoc);
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		assert.strictEqual(items.length, 0, 'Should not parse untitled non-markdown document');
 	});
@@ -385,7 +385,7 @@ suite('MarkdownOutlineProvider - Document Schemes', () => {
 		});
 		
 		provider.refresh(untitledDoc);
-		let items = await provider.getChildren();
+		let items = provider.rootItems;
 		assert.strictEqual(items.length, 1);
 		assert.strictEqual(items[0].label, 'Untitled');
 		
@@ -396,13 +396,13 @@ suite('MarkdownOutlineProvider - Document Schemes', () => {
 		});
 		
 		provider.refresh(regularDoc);
-		items = await provider.getChildren();
+		items = provider.rootItems;
 		assert.strictEqual(items.length, 1);
 		assert.strictEqual(items[0].label, 'Regular File');
 		
 		// Back to untitled
 		provider.refresh(untitledDoc);
-		items = await provider.getChildren();
+		items = provider.rootItems;
 		assert.strictEqual(items.length, 1);
 		assert.strictEqual(items[0].label, 'Untitled');
 	});
@@ -423,7 +423,7 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const items = await provider.getChildren();
+		const items = provider.rootItems;
 		
 		// Should have 1 root item (H1)
 		assert.strictEqual(items.length, 1, 'Should have 1 root item');
@@ -454,7 +454,7 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// Root: 1 H1
 		assert.strictEqual(rootItems.length, 1);
@@ -491,7 +491,7 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// Should have 2 root H1s
 		assert.strictEqual(rootItems.length, 2);
@@ -521,7 +521,7 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 1);
 		
 		// H1 should have both H3 and H2 as children (nearest parent is H1)
@@ -546,7 +546,7 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// H2s should be root items when there's no H1
 		assert.strictEqual(rootItems.length, 2);
@@ -576,7 +576,7 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		provider.refresh(document);
 		
 		// Navigate down the tree
-		const h1Items = await provider.getChildren();
+		const h1Items = provider.rootItems;
 		assert.strictEqual(h1Items.length, 1);
 		assert.strictEqual(h1Items[0].label, 'H1');
 		
@@ -619,14 +619,18 @@ suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
 		provider.refresh(document);
 		
 		// getChildren() with no argument should return root items
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 2);
 		assert.strictEqual(rootItems[0].label, 'Root 1');
 		assert.strictEqual(rootItems[1].label, 'Root 2');
 		
-		// getChildren(undefined) should also return root items
+		// PI-6: getChildren(undefined) should return root items + 1 placeholder
 		const rootItems2 = await provider.getChildren(undefined);
-		assert.strictEqual(rootItems2.length, 2);
+		assert.strictEqual(rootItems2.length, 3); // 2 headings + 1 placeholder
+		assert.strictEqual(rootItems2[0].label, 'Root 1');
+		assert.strictEqual(rootItems2[1].label, 'Root 2');
+		// Last item should be placeholder (empty label)
+		assert.strictEqual(rootItems2[2].label, '');
 	});
 
 	test('Bug Reproduction: Document with only H2 headings (like sample.md)', async () => {
@@ -667,7 +671,7 @@ Final section.`;
 		const provider = new MarkdownOutlineProvider();
 		provider.refresh(document);
 		
-		const rootItems = await provider.getChildren();
+		const rootItems = provider.rootItems;
 		
 		// Should show ALL three H2 sections as root items
 		assert.strictEqual(rootItems.length, 3, 'Should have 3 root H2 sections');
@@ -803,5 +807,101 @@ suite('MarkdownOutlineProvider - Selection Sync (PI-2)', () => {
 		const childContentItem = provider.findItemAtLine(6);
 		assert.strictEqual(childContentItem?.label, 'Child');
 		assert.strictEqual(childContentItem?.level, 2);
+	});
+});
+
+suite('PI-6: End-of-Document Drop Zone Tests', () => {
+
+	async function createMarkdownDocument(content: string): Promise<vscode.TextDocument> {
+		return await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+	}
+
+	test('Should add placeholder items at end of root items', async () => {
+		const content = `# First
+Content
+
+# Second
+Content`;
+		
+		const document = await createMarkdownDocument(content);
+		const provider = new MarkdownOutlineProvider();
+		provider.refresh(document);
+		
+		// Use getChildren() to get items with placeholders
+		const allItems = await provider.getChildren();
+		
+		// Should have 2 real headings + 1 placeholder
+		assert.strictEqual(allItems.length, 3, 'Should have 2 headings + 1 placeholder');
+		
+		// First two are real headings
+		assert.strictEqual(allItems[0].label, 'First');
+		assert.strictEqual(allItems[1].label, 'Second');
+		
+		// Last one is placeholder
+		assert.ok(allItems[2].label.startsWith(''), 'Third item should be placeholder');
+		
+		// Placeholder should be marked as such
+		assert.strictEqual((allItems[2] as any).isPlaceholder, true, 'Should be marked as placeholder');
+		
+		// Placeholder should have no icon
+		assert.strictEqual(allItems[2].iconPath, undefined, 'Placeholder should have no icon');
+	});
+
+	test('Should add placeholders even with no headings', async () => {
+		const content = 'Just some text without headings';
+		
+		const document = await createMarkdownDocument(content);
+		const provider = new MarkdownOutlineProvider();
+		provider.refresh(document);
+		
+		// Use getChildren() to get items with placeholders
+		const allItems = await provider.getChildren();
+		
+		// Should have 1 placeholder even with no headings
+		assert.strictEqual(allItems.length, 1, 'Should have 1 placeholder');
+		assert.strictEqual((allItems[0] as any).isPlaceholder, true);
+		assert.strictEqual(allItems[0].iconPath, undefined, 'Placeholder should have no icon');
+	});
+
+	test('Should NOT add placeholders for nested children', async () => {
+		const content = `# Parent
+## Child 1
+## Child 2`;
+		
+		const document = await createMarkdownDocument(content);
+		const provider = new MarkdownOutlineProvider();
+		provider.refresh(document);
+		
+		const rootItems = provider.rootItems;
+		const parentItem = rootItems[0]; // "Parent"
+		const children = await provider.getChildren(parentItem);
+		
+		// Children should NOT have placeholders
+		assert.strictEqual(children.length, 2, 'Should have only 2 children, no placeholders');
+		assert.strictEqual(children[0].label, 'Child 1');
+		assert.strictEqual(children[1].label, 'Child 2');
+	});
+
+	test('Placeholders should point to end of document', async () => {
+		const content = `# First
+Content
+
+# Second
+Content`;
+		
+		const document = await createMarkdownDocument(content);
+		const provider = new MarkdownOutlineProvider();
+		provider.refresh(document);
+		
+		// Use getChildren() to get items with placeholders
+		const allItems = await provider.getChildren();
+		const placeholder = allItems[2]; // First placeholder (after 2 headings)
+		
+		// Placeholder range should point to end of document
+		assert.strictEqual(placeholder.range.end.line, document.lineCount - 1, 
+			'Placeholder should point to last line of document');
 	});
 });

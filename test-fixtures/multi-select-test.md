@@ -196,6 +196,29 @@ Content
 ✅ **Multi-section movement**: All selected sections move together  
 ✅ **Multi-section highlighting**: All moved sections highlighted for 3 seconds  
 ✅ **Parent-child integrity**: Nested sections move as a unit with parent  
+✅ **End-of-doc drop zone**: 1 blank placeholder line at tree end for easy drops
+
+---
+
+# TEST 8: End-of-Document Drop Zone
+
+## Instructions
+1. Scroll to bottom of tree view
+2. **Verify**: You see 1 blank line at the end of the tree
+3. Select "Easy Drop Section"
+4. Drag to the blank space at end of tree
+5. **Verify**: Section moves to end of document
+6. **Verify**: No need to precisely target last heading
+
+**Expected**: Placeholder drop zone makes dropping at document end easier
+
+---
+
+# Easy Drop Section
+This section should be easy to drop at document end.
+
+# Another Section
+More content
 
 ---
 
@@ -213,5 +236,6 @@ Content
 | Test 5: Non-contiguous | ⬜ PASS / FAIL |  |
 | Test 6: Single selection | ⬜ PASS / FAIL |  |
 | Test 7: All items | ⬜ PASS / FAIL |  |
+| Test 8: End-of-doc zone | ⬜ PASS / FAIL |  |
 
 **Overall Result**: ⬜ PASS / FAIL
