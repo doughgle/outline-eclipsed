@@ -38,21 +38,35 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
-	 * PI-5: Highlight the moved text temporarily and scroll to reveal it
+	 * PI-5/PI-6: Highlight the moved text temporarily and scroll to reveal it
+	 * Delegates to highlightMovedSections for consistent behavior
 	 */
 	private highlightMovedText(editor: vscode.TextEditor, range: vscode.Range): void {
+		this.highlightMovedSections(editor, [range]);
+	}
+
+	/**
+	 * PI-6: Highlight multiple moved sections simultaneously.
+	 * Shows visual feedback for all moved sections and scrolls to reveal the first one.
+	 * 
+	 * @param editor - Active text editor
+	 * @param ranges - Array of ranges to highlight
+	 */
+	private highlightMovedSections(editor: vscode.TextEditor, ranges: vscode.Range[]): void {
 		// Clear any existing highlight timeout
 		if (this.highlightTimeout) {
 			clearTimeout(this.highlightTimeout);
 		}
 
-		// PI-5: Scroll to reveal the moved section (without changing focus)
-		editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+		// PI-6: Scroll to reveal the first moved section (without changing focus)
+		if (ranges.length > 0) {
+			editor.revealRange(ranges[0], vscode.TextEditorRevealType.InCenter);
+		}
 
-		// Apply the highlight decoration
-		editor.setDecorations(this.highlightDecorationType, [range]);
+		// Apply highlight decoration to all ranges
+		editor.setDecorations(this.highlightDecorationType, ranges);
 
-		// Clear the highlight after 3 seconds
+		// Clear highlights after 3 seconds
 		this.highlightTimeout = setTimeout(() => {
 			editor.setDecorations(this.highlightDecorationType, []);
 			this.highlightTimeout = undefined;
@@ -141,6 +155,138 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
+	 * PI-6: Move multiple sections to a target location.
+	 * Maintains relative order and handles range adjustments.
+	 * Sections are extracted in reverse order (bottom to top) to prevent line number shifts.
+	 * 
+	 * @param editor - Active text editor
+	 * @param draggedItems - Array of serialized items to move
+	 * @param targetLine - Destination line number
+	 * @returns Promise that resolves to true if successful
+	 */
+	async moveSections(
+		editor: vscode.TextEditor,
+		draggedItems: any[],
+		targetLine: number
+	): Promise<boolean> {
+		try {
+			if (draggedItems.length === 0) {
+				console.log('PI-6: No items to move');
+				return false;
+			}
+
+			const document = editor.document;
+			console.log(`PI-6: Moving ${draggedItems.length} sections to line ${targetLine}`);
+			
+			// PI-6: Build full OutlineItem objects with children ranges
+			const sourceItems: OutlineItem[] = [];
+			for (const itemData of draggedItems) {
+				const item = this.findItemAtLine(document, itemData.range.start.line);
+				if (item) {
+					sourceItems.push(item);
+				}
+			}
+			
+			if (sourceItems.length === 0) {
+				console.error('PI-6: No valid source items found');
+				return false;
+			}
+			
+			// PI-6: Work with document as array of lines
+			const allLines = document.getText().split('\n');
+			
+			// Store sections and their metadata
+			interface SectionData {
+				lines: string[];
+				originalStart: number;
+				originalEnd: number;
+			}
+			const extractedSections: SectionData[] = [];
+			
+			// PI-6: Extract sections in reverse order (bottom to top) to avoid line shifts
+			const sortedItems = [...sourceItems].sort((a, b) => 
+				b.range.start.line - a.range.start.line
+			);
+			
+			for (const item of sortedItems) {
+				let sectionStart = item.range.start.line;
+				let sectionEnd = item.range.end.line;
+				
+				// Include trailing blank line if it exists
+				if (sectionEnd + 1 < allLines.length && allLines[sectionEnd + 1].trim() === '') {
+					sectionEnd++;
+				}
+				
+				// Extract the section
+				const sectionLines = allLines.slice(sectionStart, sectionEnd + 1);
+				extractedSections.unshift({ // Add to front to maintain document order
+					lines: sectionLines,
+					originalStart: sectionStart,
+					originalEnd: sectionEnd
+				});
+				
+				// Remove from document
+				allLines.splice(sectionStart, sectionEnd - sectionStart + 1);
+			}
+			
+			// PI-6: Calculate adjusted target position
+			// Account for lines removed before the target
+			let adjustedTarget = targetLine;
+			for (const section of extractedSections) {
+				if (section.originalStart < targetLine) {
+					const sectionLength = section.originalEnd - section.originalStart + 1;
+					adjustedTarget -= sectionLength;
+				}
+			}
+			
+			// Clamp to valid range
+			adjustedTarget = Math.max(0, Math.min(adjustedTarget, allLines.length));
+			
+			// PI-6: Insert all sections at target position in document order
+			let currentInsertPos = adjustedTarget;
+			const movedRanges: vscode.Range[] = [];
+			
+			for (const section of extractedSections) {
+				allLines.splice(currentInsertPos, 0, ...section.lines);
+				
+				// Track the new range for highlighting
+				const newRange = new vscode.Range(
+					currentInsertPos,
+					0,
+					currentInsertPos + section.lines.length - 1,
+					section.lines[section.lines.length - 1].length
+				);
+				movedRanges.push(newRange);
+				
+				currentInsertPos += section.lines.length;
+			}
+			
+			// PI-6: Replace document content
+			const newContent = allLines.join('\n');
+			const fullRange = new vscode.Range(
+				document.lineAt(0).range.start,
+				document.lineAt(document.lineCount - 1).range.end
+			);
+			
+			const success = await editor.edit(editBuilder => {
+				editBuilder.replace(fullRange, newContent);
+			});
+
+			if (success) {
+				// PI-6: Highlight all moved sections
+				this.highlightMovedSections(editor, movedRanges);
+				console.log(`PI-6: Successfully moved ${extractedSections.length} sections`);
+			}
+
+			return success;
+			
+		} catch (error) {
+			console.error('PI-6: Error moving sections:', error);
+			return false;
+		}
+	}
+
+	/**
 	 * PI-4: Helper to find outline item at a given line with full range including children
 	 * This calculates the range that includes all descendant headings
 	 */
@@ -220,15 +366,74 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
-	 * Handles the drag operation - serialize the dragged items
+	 * PI-6: Remove items that are descendants of other selected items.
+	 * This prevents moving a section twice (once as parent, once as child).
+	 * An item is redundant if its range is contained within another item's range.
+	 * 
+	 * @param items - Array of selected outline items
+	 * @returns Filtered array with no redundant descendants
+	 */
+	private filterRedundantItems(items: readonly OutlineItem[]): OutlineItem[] {
+		if (items.length <= 1) {
+			return [...items];
+		}
+
+		const result: OutlineItem[] = [];
+		
+		for (const candidate of items) {
+			// Check if this candidate is contained within any other item
+			const isContainedInAnother = items.some(other => {
+				if (other === candidate) {
+					return false; // Don't compare item to itself
+				}
+				
+				// Check if candidate's range is fully contained within other's range
+				const candidateStart = candidate.range.start.line;
+				const candidateEnd = candidate.range.end.line;
+				const otherStart = other.range.start.line;
+				const otherEnd = other.range.end.line;
+				
+				return candidateStart >= otherStart && candidateEnd <= otherEnd;
+			});
+			
+			if (!isContainedInAnother) {
+				result.push(candidate);
+			}
+		}
+		
+		return result;
+	}
+
+	/**
+	 * PI-6: Sort items by their appearance in the document (top to bottom).
+	 * This ensures consistent ordering when moving multiple items.
+	 * 
+	 * @param items - Array of outline items
+	 * @returns Sorted array ordered by starting line number
+	 */
+	private sortItemsByPosition(items: OutlineItem[]): OutlineItem[] {
+		return [...items].sort((a, b) => {
+			return a.range.start.line - b.range.start.line;
+		});
+	}
+
+	/**
+	 * PI-3/PI-6: Handles the drag operation - serialize the dragged items
+	 * PI-6: Filters out redundant items and sorts by position
 	 */
 	async handleDrag(
 		source: readonly OutlineItem[],
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
+		// PI-6: Filter out items that are descendants of other selected items
+		const filteredSource = this.filterRedundantItems(source);
+		
+		// PI-6: Sort items by their document position (top to bottom)
+		const sortedSource = this.sortItemsByPosition(filteredSource);
+		
 		// Serialize the outline items for transfer
-		const serialized = source.map(item => ({
+		const serialized = sortedSource.map(item => ({
 			label: item.label,
 			level: item.level,
 			range: {
@@ -264,7 +469,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 		try {
 			const draggedItems = JSON.parse(transferItem.value as string);
-			console.log(`PI-3: Drop operation - ${draggedItems.length} item(s) dropped`);
+			console.log(`PI-3/PI-6: Drop operation - ${draggedItems.length} item(s) dropped`);
 			
 			if (draggedItems.length === 0) {
 				return;
@@ -276,10 +481,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				return;
 			}
 
-			// Get the source item info (first dragged item)
-			const sourceData = draggedItems[0];
-			const sourceStartLine = sourceData.range.start.line;
-			
 			// Determine target line
 			let targetLine: number;
 			if (target) {
@@ -292,8 +493,15 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				console.log('PI-3: Dropped at end of document');
 			}
 
-			// Execute the move
-			await this.moveSection(editor, sourceStartLine, targetLine);
+			// PI-6: Execute the move (single or multiple items)
+			if (draggedItems.length === 1) {
+				// Single item - use existing optimized logic
+				const sourceStartLine = draggedItems[0].range.start.line;
+				await this.moveSection(editor, sourceStartLine, targetLine);
+			} else {
+				// Multiple items - use batch move logic
+				await this.moveSections(editor, draggedItems, targetLine);
+			}
 			
 		} catch (error) {
 			console.error('Failed to parse drag data:', error);

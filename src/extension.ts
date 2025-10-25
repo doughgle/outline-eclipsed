@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: markdownProvider,
 		showCollapseAll: true,
-		canSelectMany: false, // PI-0: Single selection only, multi-select in PI-5
+		canSelectMany: true, // PI-6: Enable multi-select for drag and drop
 		dragAndDropController: dragDropController // PI-3: Enable drag and drop
 	});
 	
