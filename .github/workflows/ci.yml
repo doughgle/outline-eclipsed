@@ -41,6 +41,12 @@ jobs:
       - name: Compile extension
         run: npm run compile
 
+      - name: Install xvfb and dependencies on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgbm1 libasound2 libnspr4 libnss3 libxss1 libxtst6 libgtk-3-0 libatk-bridge2.0-0 libatspi2.0-0
+
       - name: Run tests on Linux (with xvfb)
         if: runner.os == 'Linux'
         run: xvfb-run -a npm test
