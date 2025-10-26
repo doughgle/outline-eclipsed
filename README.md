@@ -1,4 +1,4 @@
-![logo](icon.png)
+![logo](icon.png) [![CI](https://github.com/doughgle/outline-eclipsed/actions/workflows/ci.yml/badge.svg)](https://github.com/doughgle/outline-eclipsed/actions/workflows/ci.yml)
 # Outline Eclipsed
 
 _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to reorganize your document structure.
@@ -8,6 +8,10 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 💡 Reorganizing long documents is tedious. Instead of cutting and pasting text blocks, just drag headings in the tree view. Nested sections move together automatically. The editor highlights and scrolls to show exactly what moved. You stay focused on structure, not on selecting text ranges.
 
 ⏩ Install from the VS Code Marketplace and open any markdown file. The "Outline Eclipsed" view appears in the Explorer sidebar. Click headings to navigate. Drag them to reorganize.
+
+### Demo
+
+![demo](https://videoapi-muybridge.vimeocdn.com/animated-thumbnails/image/afa8a690-2e99-4f3f-8091-0471213bb984.gif?ClientID=sulu&Date=1761467805&Signature=b3c03e96e6468db8e83b3227cc3748f051df2334)
 
 ### Features
 
