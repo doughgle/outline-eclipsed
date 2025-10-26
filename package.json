@@ -2,7 +2,7 @@
   "name": "outline-eclipsed",
   "displayName": "Outline Eclipsed",
   "description": "An outline view for VS Code that lets you drag and drop to reorganize your document structure.",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "douglashellinger",
   "icon": "icon.png",
   "author": {
