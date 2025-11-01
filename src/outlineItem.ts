@@ -47,7 +47,6 @@ export class OutlineItem extends vscode.TreeItem {
         // Set context value for future command filtering
         this.contextValue = 'outlineItem';
         
-        // Command to jump to item when clicked (use selectionRange for cursor position)
         this.command = {
             command: 'outlineEclipsed.gotoItem',
             title: 'Go to Item',

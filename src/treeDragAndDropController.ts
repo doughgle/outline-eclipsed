@@ -9,16 +9,13 @@ import { OutlineItem } from './outlineItem';
  */
 export class TreeDragAndDropController implements vscode.TreeDragAndDropController<OutlineItem> {
 	
-	// MIME type for our tree items
 	dropMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 	dragMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 
-	// PI-5: Decoration type for highlighting moved text
 	private highlightDecorationType: vscode.TextEditorDecorationType;
 	private highlightTimeout: NodeJS.Timeout | undefined;
 
 	constructor() {
-		// Create a subtle highlight decoration
 		this.highlightDecorationType = vscode.window.createTextEditorDecorationType({
 			backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
 			border: '1px solid',
@@ -53,7 +50,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	 * @param ranges - Array of ranges to highlight
 	 */
 	private highlightMovedSections(editor: vscode.TextEditor, ranges: vscode.Range[]): void {
-		// Clear any existing highlight timeout
 		if (this.highlightTimeout) {
 			clearTimeout(this.highlightTimeout);
 		}
@@ -63,10 +59,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			editor.revealRange(ranges[0], vscode.TextEditorRevealType.InCenter);
 		}
 
-		// Apply highlight decoration to all ranges
 		editor.setDecorations(this.highlightDecorationType, ranges);
 
-		// Clear highlights after 3 seconds
 		this.highlightTimeout = setTimeout(() => {
 			editor.setDecorations(this.highlightDecorationType, []);
 			this.highlightTimeout = undefined;
@@ -85,7 +79,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		try {
 			const document = editor.document;
 			
-			// Find the source item to get its full range (PI-4: includes children)
 			const sourceItem = this.findItemAtLine(document, sourceStartLine);
 			if (!sourceItem) {
 				console.error(`PI-4: Could not find source item at line ${sourceStartLine}`);
@@ -97,31 +90,25 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			// PI-4: Simple approach - work with document as array of lines
 			const allLines = document.getText().split('\n');
 			
-			// Extract the section lines (including any trailing blank line)
 			const sourceStart = sourceItem.range.start.line;
 			const sourceEnd = sourceItem.range.end.line;
 			let actualEnd = sourceEnd;
 			
-			// Include trailing blank line if it exists
 			if (actualEnd + 1 < allLines.length && allLines[actualEnd + 1].trim() === '') {
 				actualEnd++;
 			}
 			
 			const sectionLines = allLines.slice(sourceStart, actualEnd + 1);
 			
-			// Remove the section from its current position
 			allLines.splice(sourceStart, actualEnd - sourceStart + 1);
 			
-			// Calculate new insertion position (adjusted if we removed lines before it)
 			let insertPos = targetLine;
 			if (targetLine > sourceStart) {
 				insertPos = targetLine - (actualEnd - sourceStart + 1);
 			}
 			
-			// Clamp to valid range
 			insertPos = Math.max(0, Math.min(insertPos, allLines.length));
 			
-			// Insert the section at new position
 			allLines.splice(insertPos, 0, ...sectionLines);
 			
 			// Replace entire document content
@@ -136,7 +123,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			});
 
 			if (success) {
-				// PI-5: Highlight the moved section at its new position
 				const newRange = new vscode.Range(
 					insertPos,
 					0,

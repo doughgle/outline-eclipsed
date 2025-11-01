@@ -18,36 +18,30 @@ export let outlineTreeView: vscode.TreeView<any> | undefined;
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Outline Eclipsed extension is activating (PI-0)');
 
-	// PI-0: Create markdown-specific provider
 	// Future: Factory pattern to create providers based on language
 	const markdownProvider = new MarkdownOutlineProvider();
-
-	// PI-3: Create drag and drop controller
 	const dragDropController = new TreeDragAndDropController();
 
-	// Register the tree view in the Explorer - always visible like default Outline
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: markdownProvider,
 		showCollapseAll: true,
-		canSelectMany: true, // PI-6: Enable multi-select for drag and drop
-		dragAndDropController: dragDropController // PI-3: Enable drag and drop
+		canSelectMany: true,
+		dragAndDropController: dragDropController
 	});
 	
 	// Export tree view for testing (PI-2)
 	outlineTreeView = treeView;
 
-	// Update tree view message based on active editor
 	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined) => {
 		if (!editor) {
 			treeView.description = 'No editor active';
 		} else if (editor.document.languageId !== 'markdown') {
 			treeView.description = `"${editor.document.languageId}" not yet supported in Outline Eclipsed.`;
 		} else {
-			treeView.description = undefined; // Clear message for markdown files
+			treeView.description = undefined;
 		}
 	};
 
-	// Register command to jump to outline item when clicked
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.gotoItem', (line: number) => {
 			const editor = vscode.window.activeTextEditor;
@@ -67,10 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			
-			// Find the outline item at this line
 			const item = markdownProvider.findItemAtLine(line);
 			if (item) {
-				// Select the full range of the section
 				const selection = new vscode.Selection(
 					item.range.start,
 					item.range.end
@@ -81,7 +73,6 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// PI-3: Register command to move section text (for testing and programmatic use)
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.moveSection', async (sourceStartLine: number, targetLine: number) => {
 			const editor = vscode.window.activeTextEditor;
@@ -93,7 +84,6 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// PI-2: Sync tree view selection with editor cursor position
 	const syncTreeViewSelection = async (editor: vscode.TextEditor | undefined) => {
 		if (!editor || editor.document.languageId !== 'markdown') {
 			return;
@@ -103,13 +93,11 @@ export function activate(context: vscode.ExtensionContext) {
 		const item = markdownProvider.findItemAtLine(cursorLine);
 		
 		if (item) {
-			// Reveal and select the item in tree view
 			console.log(`PI-2: Syncing selection to heading at line ${item.selectionRange.start.line}: ${item.label}`);
 			await treeView.reveal(item, { select: true, focus: false });
 		}
 	};
 
-	// Listen to active editor changes to refresh outline
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			updateTreeViewMessage(editor);
@@ -117,16 +105,13 @@ export function activate(context: vscode.ExtensionContext) {
 			if (editor && editor.document.languageId === 'markdown') {
 				console.log('PI-0: Markdown editor activated, refreshing outline');
 				markdownProvider.refresh(editor.document);
-				// PI-2: Sync selection after refresh
 				syncTreeViewSelection(editor);
 			} else {
-				// Clear outline for non-markdown files
 				markdownProvider.refresh(undefined);
 			}
 		})
 	);
 
-	// Listen to document changes to refresh outline
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument(event => {
 			if (event.document === vscode.window.activeTextEditor?.document &&
@@ -137,7 +122,6 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// PI-2: Listen to cursor position changes to sync tree view selection
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(event => {
 			if (event.textEditor.document.languageId === 'markdown') {
@@ -146,11 +130,8 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// Listen to document open events to handle language mode changes
-	// When user changes language (e.g., plaintext -> markdown), VS Code fires close + open events
 	context.subscriptions.push(
 		vscode.workspace.onDidOpenTextDocument(document => {
-			// Only process if this is the active document
 			if (document === vscode.window.activeTextEditor?.document) {
 				console.log(`PI-0: Document opened/language changed: ${document.languageId}`);
 				updateTreeViewMessage(vscode.window.activeTextEditor);
@@ -164,17 +145,15 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// Initial load - set message and refresh if markdown file is open
 	updateTreeViewMessage(vscode.window.activeTextEditor);
 	if (vscode.window.activeTextEditor?.document.languageId === 'markdown') {
 		console.log('PI-0: Initial markdown document detected');
 		markdownProvider.refresh(vscode.window.activeTextEditor.document);
-		// PI-2: Sync initial selection
 		syncTreeViewSelection(vscode.window.activeTextEditor);
 	}
 
 	context.subscriptions.push(treeView);
-	context.subscriptions.push(dragDropController); // PI-5: Dispose controller on deactivate
+	context.subscriptions.push(dragDropController);
 	
 	console.log('Markdown Outline Reorder extension activated successfully (PI-0)');
 }

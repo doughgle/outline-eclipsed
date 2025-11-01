@@ -73,7 +73,6 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         }
 
         if (element) {
-            // Return children of the given item (no placeholders for nested items)
             return Promise.resolve(element.children);
         } else {
             // PI-6: Add 1 placeholder item at end for drop zone
@@ -97,7 +96,6 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         const endLine = doc.lineCount - 1;
         const endChar = doc.lineAt(endLine).text.length;
         
-        // Create range pointing to end of document
         const range = new vscode.Range(endLine, endChar, endLine, endChar);
         
         // Create 1 placeholder item (1 blank line of drop space)
@@ -152,10 +150,8 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
      */
     private searchItems(items: OutlineItem[], lineNumber: number): OutlineItem | undefined {
         for (const item of items) {
-            // Create a position at the start of the line
             const position = new vscode.Position(lineNumber, 0);
             
-            // Check if position is within this item's range
             if (item.range.contains(position)) {
                 // Check children first (more specific)
                 const childMatch = this.searchItems(item.children, lineNumber);

@@ -21,7 +21,6 @@ export class MarkdownOutlineProvider extends OutlineProvider {
      * @returns Array of root-level outline items with nested children
      */
     protected parseDocument(document: vscode.TextDocument): OutlineItem[] {
-        // First, extract all headings as flat list
         const flatHeadings: OutlineItem[] = [];
         
         for (let i = 0; i < document.lineCount; i++) {
@@ -34,10 +33,10 @@ export class MarkdownOutlineProvider extends OutlineProvider {
                 
                 // Create Range objects (DocumentSymbol-compatible)
                 const headingLine = document.lineAt(i);
-                const selectionRange = headingLine.range; // Just the heading line
+                const selectionRange = headingLine.range;
                 const range = new vscode.Range(
-                    i, 0,  // Start of heading line
-                    endLine, document.lineAt(endLine).text.length  // End of section
+                    i, 0,
+                    endLine, document.lineAt(endLine).text.length
                 );
                 
                 const item = new OutlineItem(
@@ -53,7 +52,6 @@ export class MarkdownOutlineProvider extends OutlineProvider {
             }
         }
         
-        // Build hierarchical structure from flat list
         const rootItems = this.buildHierarchy(flatHeadings);
         
         console.log(`PI-2: Parsed ${flatHeadings.length} headings (${rootItems.length} root) from ${document.fileName}`);
@@ -77,26 +75,22 @@ export class MarkdownOutlineProvider extends OutlineProvider {
         }
         
         const rootItems: OutlineItem[] = [];
-        const stack: OutlineItem[] = []; // Stack of potential parent headings
+        const stack: OutlineItem[] = [];
         
         for (const heading of flatHeadings) {
-            // Pop stack until we find a heading with lower level (potential parent)
             while (stack.length > 0 && stack[stack.length - 1].level >= heading.level) {
                 stack.pop();
             }
             
             if (stack.length === 0) {
-                // No parent found - this is a root item
                 heading.parent = undefined;
                 rootItems.push(heading);
             } else {
-                // Add to parent's children
                 const parent = stack[stack.length - 1];
                 heading.parent = parent;
                 parent.children.push(heading);
             }
             
-            // Add current heading to stack as potential parent for subsequent headings
             stack.push(heading);
         }
         
@@ -156,18 +150,14 @@ export class MarkdownOutlineProvider extends OutlineProvider {
      * @returns Line number where section ends (inclusive)
      */
     private findSectionEnd(document: vscode.TextDocument, startLine: number, startLevel: number): number {
-        // Search forward for next heading at same or higher level
         for (let i = startLine + 1; i < document.lineCount; i++) {
             const level = this.getHeadingLevel(document.lineAt(i).text);
             
             if (level > 0 && level <= startLevel) {
-                // Found next heading at same or higher level
-                // Section ends at line before this heading
                 return i - 1;
             }
         }
         
-        // No next heading found - section goes to end of document
         return document.lineCount - 1;
     }
 }
