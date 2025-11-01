@@ -30,10 +30,10 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
      * 
      * @param document - Document to parse, or undefined to clear
      */
-    refresh(document?: vscode.TextDocument): void {
+    async refresh(document?: vscode.TextDocument): Promise<void> {
         if (document) {
             this.currentDocument = document;
-            this.items = this.parseDocument(document);
+            this.items = await this.parseDocument(document);
         } else {
             // Clear the tree when no document provided
             this.currentDocument = undefined;
@@ -45,9 +45,9 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     /**
      * Language-specific parsing logic - implemented by subclasses
      * @param document - Document to parse
-     * @returns Array of top-level outline items
+     * @returns Array of top-level outline items or Promise resolving to array
      */
-    protected abstract parseDocument(document: vscode.TextDocument): OutlineItem[];
+    protected abstract parseDocument(document: vscode.TextDocument): OutlineItem[] | Promise<OutlineItem[]>;
 
     /**
      * Required by TreeDataProvider - returns tree item for given element

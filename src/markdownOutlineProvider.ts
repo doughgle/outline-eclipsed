@@ -13,6 +13,10 @@ export class MarkdownOutlineProvider extends OutlineProvider {
     /**
      * Parses markdown document to extract hierarchical outline structure.
      * 
+     * Uses VS Code's built-in markdown parser via executeDocumentSymbolProvider command.
+     * This leverages the vscode.markdown-language-features extension which handles
+     * code blocks, inline code, and other edge cases correctly.
+     * 
      * PI-2: Builds nested hierarchy where H2 is child of H1, H3 is child of H2, etc.
      * PI-2 Refactor: Creates DocumentSymbol-compatible Range objects.
      * Handles edge cases like skipped levels and documents without root H1.
@@ -20,42 +24,150 @@ export class MarkdownOutlineProvider extends OutlineProvider {
      * @param document - Markdown document to parse
      * @returns Array of root-level outline items with nested children
      */
-    protected parseDocument(document: vscode.TextDocument): OutlineItem[] {
-        const flatHeadings: OutlineItem[] = [];
-        
-        for (let i = 0; i < document.lineCount; i++) {
-            const line = document.lineAt(i);
-            const level = this.getHeadingLevel(line.text);
-            
-            if (level > 0) {
-                const text = this.getHeadingText(line.text);
-                const endLine = this.findSectionEnd(document, i, level);
-                
-                // Create Range objects (DocumentSymbol-compatible)
-                const headingLine = document.lineAt(i);
-                const selectionRange = headingLine.range;
-                const range = new vscode.Range(
-                    i, 0,
-                    endLine, document.lineAt(endLine).text.length
-                );
-                
-                const item = new OutlineItem(
-                    text,
-                    level,
-                    range,
-                    selectionRange,
-                    [], // Children will be populated in hierarchy building
-                    this.getSymbolKindForLevel(level)
-                );
-                
-                flatHeadings.push(item);
+    protected async parseDocument(document: vscode.TextDocument): Promise<OutlineItem[]> {
+        try {
+            // Use built-in markdown parser via executeDocumentSymbolProvider
+            const symbols = await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
+                'vscode.executeDocumentSymbolProvider',
+                document.uri
+            );
+
+            if (!symbols || symbols.length === 0) {
+                return [];
             }
+
+            // Convert symbols to OutlineItems
+            const flatHeadings = this.convertSymbolsToOutlineItems(symbols, document);
+            const rootItems = this.buildHierarchy(flatHeadings);
+            
+            console.log(`PI-2: Parsed ${flatHeadings.length} headings (${rootItems.length} root) from ${document.fileName}`);
+            return rootItems;
+        } catch (error) {
+            console.error('Failed to execute document symbol provider:', error);
+            return [];
         }
-        
-        const rootItems = this.buildHierarchy(flatHeadings);
-        
-        console.log(`PI-2: Parsed ${flatHeadings.length} headings (${rootItems.length} root) from ${document.fileName}`);
-        return rootItems;
+    }
+
+    /**
+     * Converts VS Code symbols (SymbolInformation or DocumentSymbol) to OutlineItems.
+     * Flattens hierarchical DocumentSymbol structure into flat list.
+     * 
+     * @param symbols - Array of symbols from built-in parser
+     * @param document - Source document
+     * @returns Flat array of outline items in document order
+     */
+    private convertSymbolsToOutlineItems(
+        symbols: (vscode.SymbolInformation | vscode.DocumentSymbol)[],
+        document: vscode.TextDocument
+    ): OutlineItem[] {
+        const items: OutlineItem[] = [];
+
+        const processSymbol = (symbol: vscode.SymbolInformation | vscode.DocumentSymbol) => {
+            let range: vscode.Range;
+            let selectionRange: vscode.Range;
+            let name: string;
+            let kind: vscode.SymbolKind;
+            
+            name = symbol.name;
+            kind = symbol.kind;
+            
+            // Clean up heading text - remove # prefix that built-in parser includes
+            name = this.sanitizeSymbolName(name);
+            
+            if (this.isDocumentSymbol(symbol)) {
+                // DocumentSymbol has hierarchical children
+                range = symbol.range;
+                selectionRange = symbol.selectionRange;
+
+                // Flatten children recursively
+                if (symbol.children && symbol.children.length > 0) {
+                    for (const child of symbol.children) {
+                        processSymbol(child);
+                    }
+                }
+            } else {
+                // SymbolInformation is flat
+                range = symbol.location.range;
+                selectionRange = symbol.location.range;
+            }
+
+            // Extract heading level from symbol
+            const level = this.getLevelFromSymbol(symbol);
+            const item = new OutlineItem(
+                name,
+                level,
+                range,
+                selectionRange,
+                [], // Children will be populated in buildHierarchy
+                kind
+            );
+
+            items.push(item);
+        };
+
+        for (const symbol of symbols) {
+            processSymbol(symbol);
+        }
+
+        // Sort by document order (line number)
+        items.sort((a, b) => a.range.start.line - b.range.start.line);
+
+        return items;
+    }
+
+    /**
+     * Type guard to check if symbol is DocumentSymbol (has range property).
+     * 
+     * @param symbol - Symbol to check
+     * @returns True if symbol is DocumentSymbol
+     */
+    private isDocumentSymbol(symbol: vscode.SymbolInformation | vscode.DocumentSymbol): symbol is vscode.DocumentSymbol {
+        return 'range' in symbol;
+    }
+
+    /**
+     * Removes # prefix from heading text returned by built-in parser.
+     * Trims whitespace from the result.
+     * 
+     * @param text - Heading text (may include # prefix)
+     * @returns Clean heading text without # prefix
+     */
+    private sanitizeSymbolName(text: string): string {
+        const match = /^#{1,6}\s+(.+)$/.exec(text);
+        return match ? match[1].trim() : text.trim();
+    }
+
+    /**
+     * Extracts heading level from a symbol.
+     * Uses the symbol's line text to determine heading level (1-6).
+     * Falls back to inferring from SymbolKind if text parsing fails.
+     * 
+     * @param symbol - Symbol to extract level from
+     * @returns Heading level (1-6)
+     */
+    private getLevelFromSymbol(symbol: vscode.SymbolInformation | vscode.DocumentSymbol): number {
+        // Infer level from SymbolKind (built-in parser uses File/String for headings)
+        // We'll map back to heading levels 1-6
+        switch (symbol.kind) {
+            case vscode.SymbolKind.Module: return 1;
+            case vscode.SymbolKind.Class: return 2;
+            case vscode.SymbolKind.Method: return 3;
+            case vscode.SymbolKind.Function: return 4;
+            case vscode.SymbolKind.Property: return 5;
+            case vscode.SymbolKind.Variable: return 6;
+            // Built-in markdown parser uses File for H1 and String for H2-H6
+            case vscode.SymbolKind.File: return 1;
+            case vscode.SymbolKind.String: {
+                // Try to determine level from name (# prefix count)
+                const match = /^(#{1,6})\s/.exec(symbol.name);
+                if (match) {
+                    return match[1].length;
+                }
+                // Default to level 2 if can't determine
+                return 2;
+            }
+            default: return 1;
+        }
     }
 
     /**
@@ -97,67 +209,4 @@ export class MarkdownOutlineProvider extends OutlineProvider {
         return rootItems;
     }
 
-    /**
-     * Maps heading level to appropriate VS Code symbol kind.
-     * 
-     * @param level - Heading level (1-6)
-     * @returns Appropriate symbol kind for tree display
-     */
-    private getSymbolKindForLevel(level: number): vscode.SymbolKind {
-        switch (level) {
-            case 1: return vscode.SymbolKind.Module;
-            case 2: return vscode.SymbolKind.Class;
-            case 3: return vscode.SymbolKind.Method;
-            case 4: return vscode.SymbolKind.Function;
-            case 5: return vscode.SymbolKind.Property;
-            case 6: return vscode.SymbolKind.Variable;
-            default: return vscode.SymbolKind.String;
-        }
-    }
-
-    /**
-     * Parses a single line to detect if it's a markdown heading.
-     * Matches lines starting with 1-6 # symbols followed by space and text.
-     * 
-     * @param line - Text line to parse
-     * @returns Heading level (1-6) or 0 if not a heading
-     */
-    private getHeadingLevel(line: string): number {
-        const match = /^(#{1,6})\s+(.+)$/.exec(line);
-        return match ? match[1].length : 0;
-    }
-
-    /**
-     * Extracts heading text without the # prefix.
-     * Trims whitespace from the result.
-     * 
-     * @param line - Heading line text
-     * @returns Clean heading text
-     */
-    private getHeadingText(line: string): string {
-        const match = /^#{1,6}\s+(.+)$/.exec(line);
-        return match ? match[1].trim() : '';
-    }
-
-    /**
-     * Finds the end line of a section.
-     * A section ends when we encounter another heading of same or higher level,
-     * or at the end of the document.
-     * 
-     * @param document - Document to search
-     * @param startLine - Line where section starts
-     * @param startLevel - Heading level of the section
-     * @returns Line number where section ends (inclusive)
-     */
-    private findSectionEnd(document: vscode.TextDocument, startLine: number, startLevel: number): number {
-        for (let i = startLine + 1; i < document.lineCount; i++) {
-            const level = this.getHeadingLevel(document.lineAt(i).text);
-            
-            if (level > 0 && level <= startLevel) {
-                return i - 1;
-            }
-        }
-        
-        return document.lineCount - 1;
-    }
 }
