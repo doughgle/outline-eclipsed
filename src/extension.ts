@@ -20,7 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Future: Factory pattern to create providers based on language
 	const markdownProvider = new MarkdownOutlineProvider();
-	const dragDropController = new TreeDragAndDropController();
+	const dragDropController = new TreeDragAndDropController(markdownProvider);
 
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: markdownProvider,

@@ -14,8 +14,10 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 	private highlightDecorationType: vscode.TextEditorDecorationType;
 	private highlightTimeout: NodeJS.Timeout | undefined;
+	private provider: any; // OutlineProvider - using any to avoid circular import
 
-	constructor() {
+	constructor(provider?: any) {
+		this.provider = provider;
 		this.highlightDecorationType = vscode.window.createTextEditorDecorationType({
 			backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
 			border: '1px solid',
@@ -277,7 +279,16 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	 * This calculates the range that includes all descendant headings
 	 */
 	private findItemAtLine(document: vscode.TextDocument, lineNumber: number): OutlineItem | undefined {
-		// Parse all headings with their levels
+		// Use provider's already-parsed outline if available (respects code blocks)
+		if (this.provider && this.provider.findItemAtLine) {
+			const item = this.provider.findItemAtLine(lineNumber);
+			if (item) {
+				return item;
+			}
+		}
+		
+		// Fallback: Parse with code block detection
+		// This respects code blocks when finding headings
 		interface HeadingInfo {
 			line: number;
 			level: number;
@@ -285,9 +296,24 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		}
 		
 		const headings: HeadingInfo[] = [];
+		let inCodeBlock = false;
+		
 		for (let i = 0; i < document.lineCount; i++) {
 			const line = document.lineAt(i);
-			const match = line.text.match(/^(#{1,6})\s+(.+)$/);
+			const lineText = line.text;
+			
+			// Track code block state
+			if (/^(`{3,}|~{3,})/.test(lineText.trim())) {
+				inCodeBlock = !inCodeBlock;
+				continue;
+			}
+			
+			// Skip heading detection inside code blocks
+			if (inCodeBlock) {
+				continue;
+			}
+			
+			const match = lineText.match(/^(#{1,6})\s+(.+)$/);
 			if (match) {
 				headings.push({
 					line: i,
