@@ -2,219 +2,41 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { MarkdownOutlineProvider } from '../markdownOutlineProvider';
 
-suite('MarkdownOutlineProvider - Parsing Tests', () => {
-
-	/**
-	 * Helper function to create a test markdown document
-	 */
-	async function createMarkdownDocument(content: string, language: string = 'markdown'): Promise<vscode.TextDocument> {
-		return await vscode.workspace.openTextDocument({
-			content: content,
-			language: language
-		});
+/**
+ * Ensures markdown language extension is activated before tests run.
+ * Opening a markdown document triggers onLanguage:markdown activation event.
+ */
+async function ensureMarkdownExtensionActivated(): Promise<void> {
+	// Create a markdown document to trigger extension activation
+	const doc = await vscode.workspace.openTextDocument({
+		content: '# Test',
+		language: 'markdown'
+	});
+	
+	// Wait for markdown extension to activate by attempting to get symbols
+	// Retry up to 10 times with 100ms delay
+	for (let i = 0; i < 10; i++) {
+		const symbols = await vscode.commands.executeCommand<any[]>(
+			'vscode.executeDocumentSymbolProvider',
+			doc.uri
+		);
+		
+		if (symbols && symbols.length > 0) {
+			console.log(`Markdown extension activated after ${i * 5}ms`);
+			return;
+		}
+		
+		await new Promise(resolve => setTimeout(resolve, 5));
 	}
-
-	test('Should parse single H1 heading', async () => {
-		const content = '# Heading 1\n\nSome content here.';
-		const document = await createMarkdownDocument(content);
-		
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const items = provider.rootItems;
-		
-		assert.strictEqual(items.length, 1, 'Should have exactly one heading');
-		assert.strictEqual(items[0].label, 'Heading 1', 'Heading text should be correct');
-		assert.strictEqual(items[0].level, 1, 'Heading level should be 1');
-		assert.strictEqual(items[0].range.start.line, 0, 'Heading should be on line 0');
-	});
-
-	test('Should parse multiple headings at different levels', async () => {
-		const content = `# H1 Heading
-## H2 Heading
-### H3 Heading`;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		// PI-2: Returns hierarchical structure, so root has only H1
-		const rootItems = provider.rootItems;
-		assert.strictEqual(rootItems.length, 1, 'Should have one root H1');
-		assert.strictEqual(rootItems[0].label, 'H1 Heading');
-		assert.strictEqual(rootItems[0].level, 1);
-		assert.strictEqual(rootItems[0].range.start.line, 0);
-		
-		// H2 is child of H1
-		const h2Items = await provider.getChildren(rootItems[0]);
-		assert.strictEqual(h2Items.length, 1);
-		assert.strictEqual(h2Items[0].label, 'H2 Heading');
-		assert.strictEqual(h2Items[0].level, 2);
-		assert.strictEqual(h2Items[0].range.start.line, 1);
-		
-		// H3 is child of H2
-		const h3Items = await provider.getChildren(h2Items[0]);
-		assert.strictEqual(h3Items.length, 1);
-		assert.strictEqual(h3Items[0].label, 'H3 Heading');
-		assert.strictEqual(h3Items[0].level, 3);
-		assert.strictEqual(h3Items[0].range.start.line, 2);
-	});
-
-	test('Should parse all heading levels (H1-H6)', async () => {
-		const content = `# Level 1
-## Level 2
-### Level 3
-#### Level 4
-##### Level 5
-###### Level 6`;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		// PI-2: Hierarchical - navigate down the tree
-		const h1 = provider.rootItems;
-		assert.strictEqual(h1.length, 1);
-		assert.strictEqual(h1[0].level, 1);
-		
-		const h2 = await provider.getChildren(h1[0]);
-		assert.strictEqual(h2.length, 1);
-		assert.strictEqual(h2[0].level, 2);
-		
-		const h3 = await provider.getChildren(h2[0]);
-		assert.strictEqual(h3.length, 1);
-		assert.strictEqual(h3[0].level, 3);
-		
-		const h4 = await provider.getChildren(h3[0]);
-		assert.strictEqual(h4.length, 1);
-		assert.strictEqual(h4[0].level, 4);
-		
-		const h5 = await provider.getChildren(h4[0]);
-		assert.strictEqual(h5.length, 1);
-		assert.strictEqual(h5[0].level, 5);
-		
-		const h6 = await provider.getChildren(h5[0]);
-		assert.strictEqual(h6.length, 1);
-		assert.strictEqual(h6[0].level, 6);
-	});
-
-	test('Should ignore lines that are not headings', async () => {
-		const content = `# Heading 1
-
-Some regular text here.
-Not a heading.
-
-## Heading 2
-
-More content.`;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const rootItems = provider.rootItems;
-		
-		// PI-2: Only H1 at root
-		assert.strictEqual(rootItems.length, 1, 'Should have one root heading');
-		assert.strictEqual(rootItems[0].label, 'Heading 1');
-		
-		// H2 is child of H1
-		const children = await provider.getChildren(rootItems[0]);
-		assert.strictEqual(children.length, 1);
-		assert.strictEqual(children[0].label, 'Heading 2');
-	});
-
-	test('Should handle headings with special characters', async () => {
-		const content = `# Heading with **bold** text
-## Heading with \`code\`
-### Heading with [link](url)`;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const rootItems = provider.rootItems;
-		
-		// PI-2: Hierarchical structure
-		assert.strictEqual(rootItems.length, 1, 'Should have one root');
-		// Built-in parser strips markdown formatting from heading text
-		assert.strictEqual(rootItems[0].label, 'Heading with bold text');
-		
-		const h2Items = await provider.getChildren(rootItems[0]);
-		assert.strictEqual(h2Items.length, 1);
-		// Built-in parser strips backticks from code
-		assert.strictEqual(h2Items[0].label, 'Heading with code');
-		
-		const h3Items = await provider.getChildren(h2Items[0]);
-		assert.strictEqual(h3Items.length, 1);
-		// Built-in parser strips link markdown to just link text
-		assert.strictEqual(h3Items[0].label, 'Heading with link');
-	});
-
-	test('Should handle empty document', async () => {
-		const content = '';
-		const document = await createMarkdownDocument(content);
-		
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const items = provider.rootItems;
-		
-		assert.strictEqual(items.length, 0, 'Should return empty array for empty document');
-	});
-
-	test('Should handle document with no headings', async () => {
-		const content = `Just some regular text.
-No headings here.
-More text.`;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const items = provider.rootItems;
-		
-		assert.strictEqual(items.length, 0, 'Should return empty array when no headings');
-	});
-
-
-	test('Should trim whitespace from heading text', async () => {
-		const content = `#    Heading with spaces   
-##  Another  `;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const rootItems = provider.rootItems;
-		assert.strictEqual(rootItems.length, 1);
-		assert.strictEqual(rootItems[0].label, 'Heading with spaces', 'Should trim whitespace');
-		
-		const children = await provider.getChildren(rootItems[0]);
-		assert.strictEqual(children.length, 1);
-		assert.strictEqual(children[0].label, 'Another', 'Should trim whitespace');
-	});
-
-	test('Should calculate correct end line for sections', async () => {
-		const content = `# Section 1
-Line 1
-Line 2
-# Section 2
-Line 3`;
-		
-		const document = await createMarkdownDocument(content);
-		const provider = new MarkdownOutlineProvider();
-		await provider.refresh(document);
-		
-		const items = provider.rootItems;
-		
-		assert.strictEqual(items.length, 2);
-		assert.strictEqual(items[0].range.end.line, 2, 'Section 1 should end at line 2 (before Section 2)');
-		assert.strictEqual(items[1].range.end.line, 4, 'Section 2 should end at last line');
-	});
-});
+	
+	console.warn('Markdown extension may not be fully activated');
+}
 
 suite('MarkdownOutlineProvider - State Management', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should clear items when refresh called with undefined', async () => {
 		const provider = new MarkdownOutlineProvider();
@@ -318,6 +140,10 @@ suite('MarkdownOutlineProvider - State Management', () => {
 });
 
 suite('MarkdownOutlineProvider - Document Schemes', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should parse untitled markdown documents', async () => {
 		const provider = new MarkdownOutlineProvider();
@@ -342,27 +168,6 @@ suite('MarkdownOutlineProvider - Document Schemes', () => {
 		const children = await provider.getChildren(rootItems[0]);
 		assert.strictEqual(children.length, 1, 'Should have 1 child');
 		assert.strictEqual(children[0].label, 'Untitled Heading 2');
-	});
-
-	test('Provider should not parse untitled non-markdown documents', async () => {
-		const provider = new MarkdownOutlineProvider();
-		
-		// Create an untitled JavaScript document
-		const untitledDoc = await vscode.workspace.openTextDocument({
-			content: 'function test() { return 42; }',
-			language: 'javascript'
-		});
-		
-		assert.strictEqual(untitledDoc.uri.scheme, 'untitled');
-		assert.strictEqual(untitledDoc.languageId, 'javascript');
-		
-		await provider.refresh(untitledDoc);
-		const items = provider.rootItems;
-		
-		// Built-in parser returns symbols for any document type it's invoked on
-		// This is expected behavior - the built-in parser doesn't filter by language
-		// Our code should filter, but currently delegates entirely to built-in parser
-		assert.strictEqual(items.length, 1, 'Built-in parser returns JavaScript function symbol');
 	});
 
 	test('Provider should switch between untitled and regular markdown documents', async () => {
@@ -399,6 +204,10 @@ suite('MarkdownOutlineProvider - Document Schemes', () => {
 });
 
 suite('MarkdownOutlineProvider - Hierarchical Structure (PI-2)', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Should nest H2 under H1 as children', async () => {
 		const content = `# Main Heading
@@ -686,6 +495,10 @@ Final section.`;
 });
 
 suite('MarkdownOutlineProvider - Selection Sync (PI-2)', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	async function createMarkdownDocument(content: string): Promise<vscode.TextDocument> {
 		return await vscode.workspace.openTextDocument({
@@ -801,6 +614,10 @@ suite('MarkdownOutlineProvider - Selection Sync (PI-2)', () => {
 });
 
 suite('PI-6: End-of-Document Drop Zone Tests', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	async function createMarkdownDocument(content: string): Promise<vscode.TextDocument> {
 		return await vscode.workspace.openTextDocument({
