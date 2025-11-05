@@ -99,8 +99,8 @@ Content 7`;
 		assert.ok(true, 'Section should be scrolled into view');
 	});
 
-	test('PI-5: Should clear highlight after timeout', async function() {
-		this.timeout(5000); // Extend timeout for this test
+	test('PI-5: Should activate and clear highlight after timeout', async function() {
+		this.timeout(2000); // Fast test with short duration
 		
 		const content = `# Heading A
 Content A
@@ -114,18 +114,25 @@ Content B`;
 		});
 		const editor = await vscode.window.showTextDocument(doc);
 
-		const controller = new TreeDragAndDropController();
+		// Use 100ms highlight duration for fast testing
+		const controller = new TreeDragAndDropController(undefined, 100);
 		
-		// Move section and trigger highlight
+		// GIVEN: No highlight is active initially
+		assert.strictEqual(controller.isHighlightInProgress(), false, 'Highlight should not be active initially');
+		
+		// WHEN: Moving section to trigger highlight
 		await controller.moveSection(editor, 3, 0);
 		
-		// Wait for highlight to clear (3 seconds + buffer)
-		await new Promise(resolve => setTimeout(resolve, 3500));
+		// THEN: Highlight should be active immediately after move
+		assert.strictEqual(controller.isHighlightInProgress(), true, 'Highlight should be active after move');
 		
-		// After timeout, decorations should be cleared
-		// We can't directly test this without accessing private decoration type,
-		// but we verify no errors occurred
-		assert.ok(true, 'Highlight should clear without errors');
+		// Wait for highlight to clear (100ms + small buffer)
+		await new Promise(resolve => setTimeout(resolve, 150));
+		
+		// THEN: Highlight should be cleared after timeout
+		assert.strictEqual(controller.isHighlightInProgress(), false, 'Highlight should be cleared after timeout');
+		
+		controller.dispose();
 	});
 
 	test('Should have correct MIME type for drag and drop', () => {

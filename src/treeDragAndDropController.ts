@@ -15,14 +15,14 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	private highlightDecorationType: vscode.TextEditorDecorationType;
 	private highlightTimeout: NodeJS.Timeout | undefined;
 	private provider: any; // OutlineProvider - using any to avoid circular import
+	private highlightDuration: number;
 
-	private readonly highlightDuration = 1500;
-
-	constructor(provider?: any) {
+	constructor(provider?: any, highlightDuration: number = 1500) {
 		this.provider = provider;
+		this.highlightDuration = highlightDuration;
 		// PI-7: Enhanced "magnetic snap" highlight with prominent visual feedback
 		// - 2px solid border for better visibility
-		// - 1.5 second duration for quick, non-intrusive feedback
+		// - Configurable duration (default 1.5s) for quick, non-intrusive feedback
 		// - Overview ruler indicator for easy location in scrollbar
 		this.highlightDecorationType = vscode.window.createTextEditorDecorationType({
 			backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
@@ -42,6 +42,14 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			clearTimeout(this.highlightTimeout);
 		}
 		this.highlightDecorationType.dispose();
+	}
+
+	/**
+	 * Returns whether a highlight is currently active.
+	 * Useful for testing highlight behavior.
+	 */
+	isHighlightInProgress(): boolean {
+		return this.highlightTimeout !== undefined;
 	}
 
 	/**
