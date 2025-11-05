@@ -2,30 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { MarkdownOutlineProvider } from '../markdownOutlineProvider';
 import { TreeDragAndDropController } from '../treeDragAndDropController';
-
-/**
- * Helper function to ensure markdown extension is activated before tests run.
- * Polls executeDocumentSymbolProvider until it returns results.
- */
-async function ensureMarkdownExtensionActivated(): Promise<void> {
-	const testDoc = await vscode.workspace.openTextDocument({
-		content: '# Test',
-		language: 'markdown'
-	});
-	
-	// Poll until extension is ready (max 10 attempts, 100ms apart)
-	for (let i = 0; i < 10; i++) {
-		const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-			'vscode.executeDocumentSymbolProvider',
-			testDoc.uri
-		);
-		if (symbols && symbols.length > 0) {
-			return;
-		}
-		await new Promise(resolve => setTimeout(resolve, 100));
-	}
-	throw new Error('Markdown extension failed to activate');
-}
+import { ensureMarkdownExtensionActivated } from './testUtils';
 
 suite('Bug: Code Block Drag & Drop', () => {
 

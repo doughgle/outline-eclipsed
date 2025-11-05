@@ -1,36 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { MarkdownOutlineProvider } from '../markdownOutlineProvider';
-
-/**
- * Ensures markdown language extension is activated before tests run.
- * Opening a markdown document triggers onLanguage:markdown activation event.
- */
-async function ensureMarkdownExtensionActivated(): Promise<void> {
-	// Create a markdown document to trigger extension activation
-	const doc = await vscode.workspace.openTextDocument({
-		content: '# Test',
-		language: 'markdown'
-	});
-	
-	// Wait for markdown extension to activate by attempting to get symbols
-	// Retry up to 10 times with 100ms delay
-	for (let i = 0; i < 10; i++) {
-		const symbols = await vscode.commands.executeCommand<any[]>(
-			'vscode.executeDocumentSymbolProvider',
-			doc.uri
-		);
-		
-		if (symbols && symbols.length > 0) {
-			console.log(`Markdown extension activated after ${i * 5}ms`);
-			return;
-		}
-		
-		await new Promise(resolve => setTimeout(resolve, 5));
-	}
-	
-	console.warn('Markdown extension may not be fully activated');
-}
+import { ensureMarkdownExtensionActivated } from './testUtils';
 
 suite('MarkdownOutlineProvider - State Management', () => {
 	
