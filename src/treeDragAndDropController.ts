@@ -16,13 +16,21 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	private highlightTimeout: NodeJS.Timeout | undefined;
 	private provider: any; // OutlineProvider - using any to avoid circular import
 
+	private readonly highlightDuration = 1500;
+
 	constructor(provider?: any) {
 		this.provider = provider;
+		// PI-7: Enhanced "magnetic snap" highlight with prominent visual feedback
+		// - 2px solid border for better visibility
+		// - 1.5 second duration for quick, non-intrusive feedback
+		// - Overview ruler indicator for easy location in scrollbar
 		this.highlightDecorationType = vscode.window.createTextEditorDecorationType({
 			backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
-			border: '1px solid',
+			border: '2px solid',
 			borderColor: new vscode.ThemeColor('editor.findMatchBorder'),
-			isWholeLine: true
+			isWholeLine: true,
+			overviewRulerColor: new vscode.ThemeColor('editorOverviewRuler.findMatchForeground'),
+			overviewRulerLane: vscode.OverviewRulerLane.Center
 		});
 	}
 
@@ -45,8 +53,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
-	 * PI-6: Highlight multiple moved sections simultaneously.
+	 * PI-6/PI-7: Highlight multiple moved sections simultaneously.
 	 * Shows visual feedback for all moved sections and scrolls to reveal the first one.
+	 * PI-7: Enhanced with 1.5s duration for quick, non-intrusive feedback.
 	 * 
 	 * @param editor - Active text editor
 	 * @param ranges - Array of ranges to highlight
@@ -66,7 +75,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		this.highlightTimeout = setTimeout(() => {
 			editor.setDecorations(this.highlightDecorationType, []);
 			this.highlightTimeout = undefined;
-		}, 3000);
+		}, this.highlightDuration);
 	}
 
 	/**
