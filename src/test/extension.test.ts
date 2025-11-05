@@ -362,6 +362,54 @@ suite('PI-2: Tree View Selection Sync Tests', () => {
 		// Hierarchical structure should be created
 		assert.ok(extension?.isActive, 'Extension should be active');
 	});
+
+	test('BUGFIX: Selection sync should respect tree view visibility state', async function() {
+		this.timeout(3000);
+		
+		// PROBLEM: treeView.reveal() has side effect - it auto-shows hidden tree views
+		// EXPECTED: Selection sync should only update selection, NOT change visibility
+		// ROOT CAUSE: VS Code API documentation states:
+		//   "If the tree view is not visible then the tree view is shown and element is revealed."
+		// SOLUTION: Only call reveal() when tree view is already visible (check treeView.visible)
+		
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\nContent 1\n\n# Heading 2\n\nContent 2',
+			language: 'markdown'
+		});
+
+		const editor = await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Get the tree view reference
+		const extensionModule = await import('../extension.js');
+		const treeView = extensionModule.outlineTreeView;
+		assert.ok(treeView, 'Tree view should be created');
+
+		const initialVisibility = treeView.visible;
+		
+		// Move cursor to trigger selection sync
+		editor.selection = new vscode.Selection(
+			new vscode.Position(4, 0),
+			new vscode.Position(4, 0)
+		);
+		await new Promise(resolve => setTimeout(resolve, 100));
+
+		const finalVisibility = treeView.visible;
+		
+		// Verify visibility state doesn't change due to cursor movement
+		assert.strictEqual(
+			finalVisibility,
+			initialVisibility,
+			'Tree view visibility should not change when cursor moves'
+		);
+		
+		// Verify the fix: syncTreeViewSelection checks treeView.visible before calling reveal()
+		assert.ok(treeView.visible !== undefined, 'Tree view should have visible property');
+		console.log(`Tree view visibility unchanged: ${initialVisibility} -> ${finalVisibility}`);
+	});
 });
 
 suite('PI-3: Text Selection Tests', () => {

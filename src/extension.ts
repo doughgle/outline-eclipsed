@@ -89,6 +89,13 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		
+		// BUGFIX: Only sync selection if tree view is visible
+		// The reveal() API has a side effect: it auto-shows hidden tree views
+		// We respect the user's choice to hide/show the tree view
+		if (!treeView.visible) {
+			return;
+		}
+		
 		const cursorLine = editor.selection.active.line;
 		const item = markdownProvider.findItemAtLine(cursorLine);
 		
