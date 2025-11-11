@@ -3,11 +3,11 @@
 
 _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to reorganize your document structure.
 
-🪐 A VS Code extension that provides an interactive outline tree view for markdown files. Inspired by the Eclipse IDE, Outline Eclipsed lets you reorder sections by dragging and dropping headings.
+🪐 A VS Code extension that provides an interactive outline tree view for multiple programming languages. Inspired by the Eclipse IDE, Outline Eclipsed lets you reorder sections by dragging and dropping symbols.
 
-💡 Reorganizing long documents is tedious. Instead of cutting and pasting text blocks, just drag headings in the tree view. Nested sections move together automatically. The editor highlights and scrolls to show exactly what moved. You stay focused on structure, not on selecting text ranges.
+💡 Reorganizing long documents is tedious. Instead of cutting and pasting text blocks, just drag symbols in the tree view. Nested sections move together automatically. The editor highlights and scrolls to show exactly what moved. You stay focused on structure, not on selecting text ranges.
 
-⏩ Install from the VS Code Marketplace and open any markdown file. The "Outline Eclipsed" view appears in the Explorer sidebar. Click headings to navigate. Drag them to reorganize.
+⏩ Install from the VS Code Marketplace and open any supported file. The "Outline Eclipsed" view appears in the Explorer sidebar. Click symbols to navigate. Drag them to reorganize.
 
 ### Demo
 
@@ -15,11 +15,12 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 ### Features
 
-- **Drag & Drop Reordering**: Drag headings to reorder sections. Nested headings move with their parent automatically.
-- **Bidirectional Sync**: Click a heading to jump to that section. Move your cursor, and the tree highlights the current heading.
+- **Drag & Drop Reordering**: Drag symbols to reorder sections. Nested symbols move with their parent automatically.
+- **Bidirectional Sync**: Click a symbol to jump to that location. Move your cursor, and the tree highlights the current symbol.
 - **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
 - **Real-Time Updates**: The tree refreshes automatically as you edit the document.
-- **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested headings.
+- **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
+- **Multi-Language Support**: Works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more).
 
 ### Installation
 
@@ -32,17 +33,20 @@ Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
 
 ### Usage
 
-1. Open a markdown file
+1. Open any supported file (markdown, TypeScript, Python, etc.)
 2. Find "Outline Eclipsed" in the Explorer sidebar
-3. Click any heading to navigate to that section
-4. Drag and drop headings to reorganize sections
+3. Click any symbol to navigate to that location
+4. Drag and drop symbols to reorganize sections
 5. Watch the editor highlight and scroll to show the moved content
 
-### Current Support
+### Language Support
 
-- ✅ Markdown files (H1-H6 headings)
-- 🔲 JavaScript/TypeScript (coming soon)
-- 🔲 Python (coming soon)
+- ✅ **Markdown** - H1-H6 headings with custom provider
+- ✅ **TypeScript/JavaScript** - Classes, functions, methods, properties
+- ✅ **Python** - Classes, functions, methods
+- ✅ **Java** - Classes, methods, fields
+- ✅ **C/C++** - Classes, functions, structs
+- ✅ **Any language with VS Code symbol provider** - Generic support
 
 ### Development
 
