@@ -84,6 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const syncTreeViewSelection = async (editor: vscode.TextEditor | undefined) => {
 		if (!editor) {
+			console.log('[TRACE] syncTreeViewSelection: no editor');
 			return;
 		}
 		
@@ -91,27 +92,38 @@ export function activate(context: vscode.ExtensionContext) {
 		// The reveal() API has a side effect: it auto-shows hidden tree views
 		// We respect the user's choice to hide/show the tree view
 		if (!treeView.visible) {
+			console.log('[TRACE] syncTreeViewSelection: tree view not visible, skipping');
 			return;
 		}
 		
 		const cursorLine = editor.selection.active.line;
+		console.log(`[TRACE] syncTreeViewSelection: finding item at line ${cursorLine}`);
 		const item = provider.findItemAtLine(cursorLine);
 		
 		if (item) {
-			console.log(`Syncing selection to item at line ${item.selectionRange.start.line}: ${item.label}`);
-			await treeView.reveal(item, { select: true, focus: false });
+			console.log(`[TRACE] syncTreeViewSelection: found item "${item.label}", calling reveal()`);
+			try {
+				await treeView.reveal(item, { select: true, focus: false });
+				console.log(`[TRACE] syncTreeViewSelection: reveal() completed successfully`);
+			} catch (error) {
+				console.error(`[TRACE] syncTreeViewSelection: reveal() failed:`, error);
+			}
+		} else {
+			console.log(`[TRACE] syncTreeViewSelection: no item found at line ${cursorLine}`);
 		}
 	};
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(editor => {
+			console.log('[TRACE] onDidChangeActiveTextEditor');
 			updateTreeViewMessage(editor);
 			
 			if (editor) {
-				console.log(`Editor activated: ${editor.document.languageId}`);
+				console.log(`[TRACE] Editor activated: ${editor.document.languageId}`);
 				provider.refresh(editor.document);
 				syncTreeViewSelection(editor);
 			} else {
+				console.log('[TRACE] No editor active');
 				provider.refresh(undefined);
 			}
 		})
@@ -120,7 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument(event => {
 			if (event.document === vscode.window.activeTextEditor?.document) {
-				console.log(`Document changed: ${event.document.languageId}`);
+				console.log(`[TRACE] onDidChangeTextDocument: ${event.document.languageId}`);
 				provider.refresh(event.document);
 			}
 		})
@@ -128,6 +140,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(event => {
+			console.log(`[TRACE] onDidChangeTextEditorSelection: line ${event.textEditor.selection.active.line}`);
 			syncTreeViewSelection(event.textEditor);
 		})
 	);
@@ -135,16 +148,18 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.workspace.onDidOpenTextDocument(document => {
 			if (document === vscode.window.activeTextEditor?.document) {
-				console.log(`Document opened/language changed: ${document.languageId}`);
+				console.log(`[TRACE] onDidOpenTextDocument: ${document.languageId}`);
 				updateTreeViewMessage(vscode.window.activeTextEditor);
 				provider.refresh(document);
+				// DON'T call syncTreeViewSelection here - it will be called by onDidChangeTextEditorSelection
+				// which fires after the tree view has finished updating
 			}
 		})
 	);
 
 	updateTreeViewMessage(vscode.window.activeTextEditor);
 	if (vscode.window.activeTextEditor) {
-		console.log(`Initial document detected: ${vscode.window.activeTextEditor.document.languageId}`);
+		console.log(`[TRACE] Initial document detected: ${vscode.window.activeTextEditor.document.languageId}`);
 		provider.refresh(vscode.window.activeTextEditor.document);
 		syncTreeViewSelection(vscode.window.activeTextEditor);
 	}
