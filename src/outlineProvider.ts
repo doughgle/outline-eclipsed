@@ -10,7 +10,7 @@ import { OutlineItem } from './outlineItem';
  */
 export abstract class OutlineProvider implements vscode.TreeDataProvider<OutlineItem> {
     
-    private _onDidChangeTreeData = new vscode.EventEmitter<OutlineItem | undefined | null | void>();
+    protected _onDidChangeTreeData = new vscode.EventEmitter<OutlineItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     protected items: OutlineItem[] = [];
