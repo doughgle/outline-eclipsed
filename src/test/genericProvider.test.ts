@@ -306,9 +306,8 @@ Content here
 		
 		if (rootItems.length > 0) {
 			const item = rootItems[0];
-			assert.ok(item.description, 'Description should be set');
-			assert.ok(typeof item.description === 'string', 'Description should be a string');
-			assert.ok((item.description as string).includes('L'), 'Description should include line indicator');
+			// Markdown headings don't have values, so description should be undefined
+			assert.strictEqual(item.description, undefined, 'Markdown headings should not have descriptions');
 		}
 	});
 

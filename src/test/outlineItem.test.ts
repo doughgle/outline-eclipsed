@@ -84,20 +84,74 @@ suite('OutlineItem - PI-2 Refactor (Range-based)', () => {
 
 suite('OutlineItem - PI-9: Description and Tooltip', () => {
 
-	test('Should show line range in description for single-line items', () => {
+	test('Should not show description for items without document', () => {
 		const range = new vscode.Range(5, 0, 5, 50);
 		const selRange = new vscode.Range(5, 0, 5, 20);
 		const item = new OutlineItem('Test Heading', 1, range, selRange);
 		
-		assert.strictEqual(item.description, 'L6');
+		// Without document, description should be undefined
+		assert.strictEqual(item.description, undefined);
 	});
 
-	test('Should show line range in description for multi-line items', () => {
-		const range = new vscode.Range(5, 0, 10, 50);
-		const selRange = new vscode.Range(5, 0, 5, 20);
-		const item = new OutlineItem('Test Heading', 1, range, selRange);
+	test('Should extract value for constants when document is provided', async () => {
+		// Create a document with a constant
+		const document = await vscode.workspace.openTextDocument({
+			content: 'const MAX_RETRIES = 3;',
+			language: 'javascript'
+		});
 		
-		assert.strictEqual(item.description, 'L6-L11');
+		const range = new vscode.Range(0, 0, 0, 22);
+		const selRange = new vscode.Range(0, 6, 0, 17); // MAX_RETRIES
+		const item = new OutlineItem('MAX_RETRIES', 1, range, selRange, [], vscode.SymbolKind.Constant, document);
+		
+		assert.strictEqual(item.description, '3');
+	});
+
+	test('Should extract value for variables when document is provided', async () => {
+		// Create a document with a variable
+		const document = await vscode.workspace.openTextDocument({
+			content: 'let timeout = 5000;',
+			language: 'javascript'
+		});
+		
+		const range = new vscode.Range(0, 0, 0, 19);
+		const selRange = new vscode.Range(0, 4, 0, 11); // timeout
+		const item = new OutlineItem('timeout', 1, range, selRange, [], vscode.SymbolKind.Variable, document);
+		
+		assert.strictEqual(item.description, '5000');
+	});
+
+	test('Should extract values from JSON data', async () => {
+		// Create a JSON document
+		const document = await vscode.workspace.openTextDocument({
+			content: '{\n  "name": "test-app",\n  "version": "1.0.0"\n}',
+			language: 'json'
+		});
+		
+		const range = new vscode.Range(1, 2, 1, 20);
+		const selRange = new vscode.Range(1, 3, 1, 7); // "name"
+		const item = new OutlineItem('name', 1, range, selRange, [], vscode.SymbolKind.String, document);
+		
+		assert.strictEqual(item.description, '"test-app"');
+	});
+
+	test('Should truncate long values', async () => {
+		// Create a document with a long string value
+		const longValue = 'a'.repeat(60);
+		const document = await vscode.workspace.openTextDocument({
+			content: `const longString = "${longValue}";`,
+			language: 'javascript'
+		});
+		
+		const range = new vscode.Range(0, 0, 0, 80);
+		const selRange = new vscode.Range(0, 6, 0, 16); // longString
+		const item = new OutlineItem('longString', 1, range, selRange, [], vscode.SymbolKind.Constant, document);
+		
+		// Should be truncated to 50 chars max
+		assert.ok(item.description);
+		assert.ok(typeof item.description === 'string');
+		assert.ok(item.description.length <= 50);
+		assert.ok(item.description.endsWith('...'));
 	});
 
 	test('Should have tooltip with symbol kind and line information', () => {
@@ -137,7 +191,7 @@ suite('OutlineItem - PI-9: Description and Tooltip', () => {
 		assert.ok(tooltipText.includes('6'), 'Tooltip should include line number');
 	});
 
-	test('Should handle items with children in description', () => {
+	test('Should not show description for non-constant symbols without document', () => {
 		const childRange = new vscode.Range(6, 0, 8, 10);
 		const childSelRange = new vscode.Range(6, 0, 6, 15);
 		const child = new OutlineItem('Child Method', 2, childRange, childSelRange, [], vscode.SymbolKind.Method);
@@ -146,9 +200,8 @@ suite('OutlineItem - PI-9: Description and Tooltip', () => {
 		const parentSelRange = new vscode.Range(5, 0, 5, 20);
 		const parent = new OutlineItem('Parent Class', 1, parentRange, parentSelRange, [child], vscode.SymbolKind.Class);
 		
-		// Parent should show its full range
-		assert.strictEqual(parent.description, 'L6-L11');
-		// Child should show its range
-		assert.strictEqual(child.description, 'L7-L9');
+		// Without document, description should be undefined for non-constant symbols
+		assert.strictEqual(parent.description, undefined);
+		assert.strictEqual(child.description, undefined);
 	});
 });
