@@ -5,9 +5,12 @@
 - ✅ **PI-6**: Multi-select drag & drop
   - fix code fence drag and drop issues
 - ✅ **PI-7**: Enhanced "magnetic snap" highlights - more prominent visual feedback with overview ruler
-- 🔲 **PI-8**: Support for additional languages (JavaScript, TypeScript, Python)
+- ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python)
+  - Outline uses native Document Symbols where available
+  - Event-driven refresh when symbols become available
+  - Drag & drop disabled for non-markdown to avoid losing banner comments and non-symbol code
 - 🔲 **PI-9**: Configuration options
-- 🔲 **Future**: Support for JavaScript, TypeScript, Python, and other languages
+- 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 
 ### PI-0: Extension Skeleton ✅
 
