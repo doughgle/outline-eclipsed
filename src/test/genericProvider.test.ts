@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { GenericOutlineProvider } from '../genericOutlineProvider';
+import { ensureMarkdownExtensionActivated, waitForDocumentSymbols } from './testUtils';
 
 /**
  * Tests for GenericOutlineProvider
@@ -9,6 +10,10 @@ import { GenericOutlineProvider } from '../genericOutlineProvider';
  * The provider should work with any language that has a document symbol provider.
  */
 suite('GenericOutlineProvider - Basic Functionality', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should handle documents without symbols', async () => {
 		const provider = new GenericOutlineProvider();
@@ -33,6 +38,9 @@ suite('GenericOutlineProvider - Basic Functionality', () => {
 			content: '# Heading 1\n\n## Heading 2\n\nContent',
 			language: 'markdown'
 		});
+		
+		// Wait for symbols to be available
+		await waitForDocumentSymbols(markdownDoc);
 		
 		await provider.refresh(markdownDoc);
 		let rootItems = provider.rootItems;
@@ -76,6 +84,10 @@ suite('GenericOutlineProvider - Basic Functionality', () => {
 });
 
 suite('GenericOutlineProvider - Symbol Conversion', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should work with markdown symbols', async () => {
 		const provider = new GenericOutlineProvider();
@@ -122,6 +134,10 @@ More content`;
 });
 
 suite('GenericOutlineProvider - Hierarchy Building', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should build hierarchy from flat symbols', async () => {
 		const provider = new GenericOutlineProvider();
@@ -163,6 +179,10 @@ suite('GenericOutlineProvider - Hierarchy Building', () => {
 });
 
 suite('GenericOutlineProvider - Selection and Navigation', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should find items at specific lines', async () => {
 		const provider = new GenericOutlineProvider();
@@ -198,6 +218,10 @@ suite('GenericOutlineProvider - Selection and Navigation', () => {
 });
 
 suite('GenericOutlineProvider - TreeDataProvider Interface', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
 
 	test('Provider should implement getTreeItem correctly', async () => {
 		const provider = new GenericOutlineProvider();
