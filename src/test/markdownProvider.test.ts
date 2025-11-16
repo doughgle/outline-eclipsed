@@ -683,3 +683,128 @@ Content`;
 			'Placeholder should point to last line of document');
 	});
 });
+
+suite('PI-9: MarkdownProvider Description and Tooltip Tests', () => {
+
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
+
+	test('Markdown items should have line range descriptions', async () => {
+		const content = `# Heading 1
+
+Content here
+More content
+
+## Heading 2
+
+Some text`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		const provider = new MarkdownOutlineProvider();
+		await provider.refresh(document);
+		
+		const rootItems = provider.rootItems;
+		assert.strictEqual(rootItems.length, 1);
+		
+		// First heading should show its full range
+		const h1 = rootItems[0];
+		assert.ok(h1.description, 'Description should be set');
+		assert.ok(typeof h1.description === 'string', 'Description should be a string');
+		assert.ok((h1.description as string).includes('L1'), 'Description should include line number');
+		
+		// Check child
+		const children = await provider.getChildren(h1);
+		const h2 = children[0]; // First child (not placeholder)
+		assert.ok(h2.description, 'Child description should be set');
+		assert.ok(typeof h2.description === 'string', 'Child description should be a string');
+		assert.ok((h2.description as string).includes('L'), 'Child description should include line indicator');
+	});
+
+	test('Single-line markdown items should show single line in description', async () => {
+		const content = `# First
+# Second
+# Third`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		const provider = new MarkdownOutlineProvider();
+		await provider.refresh(document);
+		
+		const rootItems = provider.rootItems;
+		assert.strictEqual(rootItems.length, 3);
+		
+		// Each heading on its own line
+		assert.strictEqual(rootItems[0].description, 'L1');
+		assert.strictEqual(rootItems[1].description, 'L2');
+		assert.strictEqual(rootItems[2].description, 'L3');
+	});
+
+	test('Multi-line markdown items should show line range in description', async () => {
+		const content = `# Heading 1
+
+Line 1
+Line 2
+Line 3
+
+# Heading 2`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		const provider = new MarkdownOutlineProvider();
+		await provider.refresh(document);
+		
+		const rootItems = provider.rootItems;
+		assert.strictEqual(rootItems.length, 2);
+		
+		// First heading spans lines 1-6 (0-5 in 0-based)
+		const h1 = rootItems[0];
+		assert.ok(typeof h1.description === 'string', 'Description should be a string');
+		const desc = h1.description as string;
+		assert.ok(desc.includes('L1'), 'Should include start line');
+		assert.ok(desc.includes('L6'), 'Should include end line');
+		assert.ok(desc.includes('-'), 'Should show range with dash');
+	});
+
+	test('Markdown items should have tooltips with heading text and line info', async () => {
+		const content = `# Main Heading
+
+Content here
+
+## Sub Heading`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		const provider = new MarkdownOutlineProvider();
+		await provider.refresh(document);
+		
+		const rootItems = provider.rootItems;
+		const h1 = rootItems[0];
+		
+		// Tooltip should be a MarkdownString
+		assert.ok(h1.tooltip instanceof vscode.MarkdownString, 'Tooltip should be MarkdownString');
+		const tooltipText = h1.tooltip.value;
+		assert.ok(tooltipText.includes('Main Heading'), 'Tooltip should include heading text');
+		assert.ok(tooltipText.includes('1'), 'Tooltip should include line number');
+		
+		// Check child tooltip
+		const children = await provider.getChildren(h1);
+		const h2 = children[0];
+		assert.ok(h2.tooltip instanceof vscode.MarkdownString, 'Child tooltip should be MarkdownString');
+		const h2TooltipText = h2.tooltip.value;
+		assert.ok(h2TooltipText.includes('Sub Heading'), 'Child tooltip should include heading text');
+	});
+});
