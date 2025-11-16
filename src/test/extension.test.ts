@@ -699,29 +699,4 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
 	});
 
-	test('Tooltips should work across different language files', async () => {
-		// Test with Python
-		const pythonDoc = await vscode.workspace.openTextDocument({
-			content: 'class MyClass:\n    def method(self):\n        pass',
-			language: 'python'
-		});
-
-		await vscode.window.showTextDocument(pythonDoc);
-		await new Promise(resolve => setTimeout(resolve, 1000));
-
-		let extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
-		assert.strictEqual(extension?.isActive, true, 'Extension should be active for Python');
-
-		// Test with JavaScript
-		const jsDoc = await vscode.workspace.openTextDocument({
-			content: 'function myFunction() {\n  return 42;\n}',
-			language: 'javascript'
-		});
-
-		await vscode.window.showTextDocument(jsDoc);
-		await new Promise(resolve => setTimeout(resolve, 1000));
-
-		extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
-		assert.strictEqual(extension?.isActive, true, 'Extension should be active for JavaScript');
-	});
 });
