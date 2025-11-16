@@ -31,12 +31,52 @@ export function activate(context: vscode.ExtensionContext) {
 	// Export tree view for testing (PI-2)
 	outlineTreeView = treeView;
 
-	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined) => {
+	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined, message?: string) => {
 		if (!editor) {
 			treeView.description = 'No editor active';
+		} else if (message) {
+			treeView.description = message;
 		} else {
 			// Clear description - all languages with symbol providers are supported
 			treeView.description = undefined;
+		}
+	};
+
+	/**
+	 * Refresh outline with timeout for language server activation.
+	 * If symbols aren't available within 350ms, shows a message.
+	 */
+	const refreshWithTimeout = async (document: vscode.TextDocument) => {
+		const startTime = Date.now();
+		
+		// Start the refresh
+		await provider.refresh(document);
+		
+		// Check if we got symbols
+		if (provider.rootItems.length === 0) {
+			const elapsed = Date.now() - startTime;
+			const remainingTime = Math.max(0, 350 - elapsed);
+			
+			// Wait remaining time for symbols to become available
+			if (remainingTime > 0) {
+				await new Promise(resolve => setTimeout(resolve, remainingTime));
+				// Try refresh again
+				await provider.refresh(document);
+			}
+			
+			// If still no symbols, show message
+			if (provider.rootItems.length === 0) {
+				updateTreeViewMessage(
+					vscode.window.activeTextEditor,
+					`No outline symbols for ${document.languageId}`
+				);
+			} else {
+				// Symbols appeared, clear message
+				updateTreeViewMessage(vscode.window.activeTextEditor);
+			}
+		} else {
+			// Got symbols immediately, clear any message
+			updateTreeViewMessage(vscode.window.activeTextEditor);
 		}
 	};
 
@@ -120,11 +160,28 @@ export function activate(context: vscode.ExtensionContext) {
 			
 			if (editor) {
 				console.log(`[TRACE] Editor activated: ${editor.document.languageId}`);
-				provider.refresh(editor.document);
+				refreshWithTimeout(editor.document);
 				syncTreeViewSelection(editor);
 			} else {
 				console.log('[TRACE] No editor active');
 				provider.refresh(undefined);
+			}
+		})
+	);
+
+	// Listen for diagnostics changes - indicates language server activity
+	context.subscriptions.push(
+		vscode.languages.onDidChangeDiagnostics(event => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) {
+				return;
+			}
+			
+			// Check if diagnostics changed for the active document
+			const affectsActiveDoc = event.uris.some(uri => uri.toString() === editor.document.uri.toString());
+			if (affectsActiveDoc && provider.rootItems.length === 0) {
+				console.log(`[TRACE] Diagnostics changed for ${editor.document.languageId}, refreshing outline`);
+				refreshWithTimeout(editor.document);
 			}
 		})
 	);
@@ -150,7 +207,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (document === vscode.window.activeTextEditor?.document) {
 				console.log(`[TRACE] onDidOpenTextDocument: ${document.languageId}`);
 				updateTreeViewMessage(vscode.window.activeTextEditor);
-				provider.refresh(document);
+				refreshWithTimeout(document);
 				// DON'T call syncTreeViewSelection here - it will be called by onDidChangeTextEditorSelection
 				// which fires after the tree view has finished updating
 			}
@@ -160,7 +217,7 @@ export function activate(context: vscode.ExtensionContext) {
 	updateTreeViewMessage(vscode.window.activeTextEditor);
 	if (vscode.window.activeTextEditor) {
 		console.log(`[TRACE] Initial document detected: ${vscode.window.activeTextEditor.document.languageId}`);
-		provider.refresh(vscode.window.activeTextEditor.document);
+		refreshWithTimeout(vscode.window.activeTextEditor.document);
 		syncTreeViewSelection(vscode.window.activeTextEditor);
 	}
 
