@@ -9,7 +9,10 @@
   - Outline uses native Document Symbols where available
   - Event-driven refresh when symbols become available
   - Drag & drop disabled for non-markdown to avoid losing banner comments and non-symbol code
-- 🔲 **PI-9**: Configuration options
+- 🔲 **PI-9**: enrich tree items with description and tooltip
+- 🔲 **PI-10**: show outline for markdown preview when focused
+- 🔲 **PI-11**: add addition symbols for markdown e.g. code blocks, quotes
+- 🔲 **PI-12**: Configuration options
 - 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 
 ### PI-0: Extension Skeleton ✅
