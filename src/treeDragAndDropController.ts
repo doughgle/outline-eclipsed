@@ -455,6 +455,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
+		// Only allow drag for markdown files to prevent data loss
+		const editor = vscode.window.activeTextEditor;
+		if (!editor || editor.document.languageId !== 'markdown') {
+			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+			return;
+		}
+		
 		// PI-6: Filter out items that are descendants of other selected items
 		const filteredSource = this.filterRedundantItems(source);
 		
@@ -489,6 +496,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
+		// Only allow drop for markdown files to prevent data loss
+		const editor = vscode.window.activeTextEditor;
+		if (!editor || editor.document.languageId !== 'markdown') {
+			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+			return;
+		}
+		
 		// Get the drag data
 		const transferItem = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
 		if (!transferItem) {
