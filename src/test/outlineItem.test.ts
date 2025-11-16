@@ -81,3 +81,74 @@ suite('OutlineItem - PI-2 Refactor (Range-based)', () => {
 		assert.strictEqual(item.command.arguments?.[0], 42);
 	});
 });
+
+suite('OutlineItem - PI-9: Description and Tooltip', () => {
+
+	test('Should show line range in description for single-line items', () => {
+		const range = new vscode.Range(5, 0, 5, 50);
+		const selRange = new vscode.Range(5, 0, 5, 20);
+		const item = new OutlineItem('Test Heading', 1, range, selRange);
+		
+		assert.strictEqual(item.description, 'L6');
+	});
+
+	test('Should show line range in description for multi-line items', () => {
+		const range = new vscode.Range(5, 0, 10, 50);
+		const selRange = new vscode.Range(5, 0, 5, 20);
+		const item = new OutlineItem('Test Heading', 1, range, selRange);
+		
+		assert.strictEqual(item.description, 'L6-L11');
+	});
+
+	test('Should have tooltip with symbol kind and line information', () => {
+		const range = new vscode.Range(5, 0, 10, 50);
+		const selRange = new vscode.Range(5, 0, 5, 20);
+		const item = new OutlineItem('TestClass', 1, range, selRange, [], vscode.SymbolKind.Class);
+		
+		// Tooltip should be a MarkdownString with detailed information
+		assert.ok(item.tooltip instanceof vscode.MarkdownString);
+		const tooltipText = item.tooltip.value;
+		assert.ok(tooltipText.includes('TestClass'), 'Tooltip should include symbol name');
+		assert.ok(tooltipText.includes('Class'), 'Tooltip should include symbol kind');
+		assert.ok(tooltipText.includes('6-11'), 'Tooltip should include line range');
+	});
+
+	test('Should have tooltip for markdown heading without symbol kind', () => {
+		const range = new vscode.Range(5, 0, 10, 50);
+		const selRange = new vscode.Range(5, 0, 5, 20);
+		const item = new OutlineItem('# Main Heading', 1, range, selRange);
+		
+		// Tooltip should be a MarkdownString
+		assert.ok(item.tooltip instanceof vscode.MarkdownString);
+		const tooltipText = item.tooltip.value;
+		assert.ok(tooltipText.includes('# Main Heading'), 'Tooltip should include heading text');
+		assert.ok(tooltipText.includes('6-11'), 'Tooltip should include line range');
+	});
+
+	test('Should format single-line tooltip differently', () => {
+		const range = new vscode.Range(5, 0, 5, 50);
+		const selRange = new vscode.Range(5, 0, 5, 20);
+		const item = new OutlineItem('shortFunction', 1, range, selRange, [], vscode.SymbolKind.Function);
+		
+		assert.ok(item.tooltip instanceof vscode.MarkdownString);
+		const tooltipText = item.tooltip.value;
+		assert.ok(tooltipText.includes('shortFunction'), 'Tooltip should include symbol name');
+		assert.ok(tooltipText.includes('Function'), 'Tooltip should include symbol kind');
+		assert.ok(tooltipText.includes('6'), 'Tooltip should include line number');
+	});
+
+	test('Should handle items with children in description', () => {
+		const childRange = new vscode.Range(6, 0, 8, 10);
+		const childSelRange = new vscode.Range(6, 0, 6, 15);
+		const child = new OutlineItem('Child Method', 2, childRange, childSelRange, [], vscode.SymbolKind.Method);
+		
+		const parentRange = new vscode.Range(5, 0, 10, 50);
+		const parentSelRange = new vscode.Range(5, 0, 5, 20);
+		const parent = new OutlineItem('Parent Class', 1, parentRange, parentSelRange, [child], vscode.SymbolKind.Class);
+		
+		// Parent should show its full range
+		assert.strictEqual(parent.description, 'L6-L11');
+		// Child should show its range
+		assert.strictEqual(child.description, 'L7-L9');
+	});
+});
