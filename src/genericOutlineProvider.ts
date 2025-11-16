@@ -30,16 +30,71 @@ export class GenericOutlineProvider extends OutlineProvider {
                 return [];
             }
 
-            // Convert symbols to OutlineItems
-            const flatItems = this.convertSymbolsToOutlineItems(symbols, document);
-            const rootItems = this.buildHierarchy(flatItems);
-            
-            console.log(`Parsed ${flatItems.length} symbols (${rootItems.length} root) from ${document.fileName}`);
-            return rootItems;
+            // Check if we got DocumentSymbols (hierarchical) or SymbolInformation (flat)
+            if (symbols.length > 0 && this.isDocumentSymbol(symbols[0])) {
+                // DocumentSymbol already has hierarchy - preserve it
+                const rootItems = this.convertDocumentSymbolsToOutlineItems(symbols as vscode.DocumentSymbol[]);
+                console.log(`Parsed ${this.countTotalItems(rootItems)} symbols (${rootItems.length} root) from ${document.fileName}`);
+                return rootItems;
+            } else {
+                // SymbolInformation is flat - need to build hierarchy
+                const flatItems = this.convertSymbolsToOutlineItems(symbols, document);
+                const rootItems = this.buildHierarchy(flatItems);
+                console.log(`Parsed ${flatItems.length} symbols (${rootItems.length} root) from ${document.fileName}`);
+                return rootItems;
+            }
         } catch (error) {
             console.error('Failed to execute document symbol provider:', error);
             return [];
         }
+    }
+
+    /**
+     * Converts DocumentSymbols to OutlineItems, preserving native hierarchy.
+     * This is the preferred path for languages that provide DocumentSymbol.
+     * 
+     * @param symbols - Array of DocumentSymbols with native hierarchy
+     * @returns Array of root OutlineItems with nested children
+     */
+    protected convertDocumentSymbolsToOutlineItems(symbols: vscode.DocumentSymbol[]): OutlineItem[] {
+        const convertSymbol = (symbol: vscode.DocumentSymbol): OutlineItem => {
+            const name = this.sanitizeSymbolName(symbol.name);
+            const level = this.getLevelFromSymbol(symbol);
+            
+            // Recursively convert children
+            const children = symbol.children 
+                ? symbol.children.map(child => convertSymbol(child))
+                : [];
+            
+            const item = new OutlineItem(
+                name,
+                level,
+                symbol.range,
+                symbol.selectionRange,
+                children,
+                symbol.kind
+            );
+            
+            // Set parent references for children
+            for (const child of children) {
+                child.parent = item;
+            }
+            
+            return item;
+        };
+        
+        return symbols.map(symbol => convertSymbol(symbol));
+    }
+
+    /**
+     * Counts total items in tree (for logging).
+     */
+    protected countTotalItems(items: OutlineItem[]): number {
+        let count = items.length;
+        for (const item of items) {
+            count += this.countTotalItems(item.children);
+        }
+        return count;
     }
 
     /**
