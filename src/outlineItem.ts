@@ -70,11 +70,11 @@ function formatLineRange(range: vscode.Range): string {
 
 /**
  * Extracts a value description for the symbol.
- * PI-9: Prefers symbol.detail from language server when available.
- * Falls back to parsing document text for constants/variables in data formats.
+ * PI-9: Uses symbol.detail from language server when available.
+ * Avoids re-parsing document text unless necessary.
  * 
  * @param symbolDetail - The detail property from DocumentSymbol (from language server)
- * @param document - The document containing the symbol
+ * @param document - The document containing the symbol (only for rare fallback cases)
  * @param range - Full range of the symbol
  * @param selectionRange - Range of just the symbol name/key
  * @param symbolKind - The kind of symbol
@@ -89,36 +89,33 @@ function extractValueDescription(
     symbolKind: vscode.SymbolKind | undefined,
     languageId: string | undefined
 ): string | undefined {
-    // First, try to use the detail from the language server if available
-    // This is more reliable than parsing document text
+    // Use the detail from the language server when available
+    // This works for all languages including data formats (JSON, YAML, TOML)
     if (symbolDetail) {
-        // For constants and variables, the detail often contains the value or type info
-        if (symbolKind === vscode.SymbolKind.Constant || 
-            symbolKind === vscode.SymbolKind.Variable ||
-            symbolKind === vscode.SymbolKind.EnumMember) {
-            // Clean up the detail: truncate and ensure single line
-            let detail = symbolDetail.trim();
-            detail = detail.replace(/\n.*/g, '').trim();
-            if (detail.length > 50) {
-                detail = detail.substring(0, 47) + '...';
-            }
-            return detail;
+        // Clean up the detail: truncate and ensure single line
+        let detail = symbolDetail.trim();
+        detail = detail.replace(/\n.*/g, '').trim();
+        if (detail.length > 50) {
+            detail = detail.substring(0, 47) + '...';
         }
+        return detail;
     }
     
-    // Fallback: parse document text for data formats or when detail is not available
+    // No detail available and no document to parse - can't extract value
     if (!document) {
         return undefined;
     }
 
+    // Rare fallback: Only parse document text when detail is not available
+    // This should rarely happen with modern language servers
     const lang = languageId || document.languageId;
     
-    // For data interchange formats (JSON, YAML, TOML), extract the value
+    // For data interchange formats (JSON, YAML, TOML), extract the value from source
     if (lang === 'json' || lang === 'jsonc' || lang === 'yaml' || lang === 'toml') {
         return extractDataValue(document, range, selectionRange);
     }
     
-    // For programming languages without detail, parse the value from source
+    // For programming languages, parse the value from source as last resort
     if (symbolKind === vscode.SymbolKind.Constant || 
         symbolKind === vscode.SymbolKind.Variable ||
         symbolKind === vscode.SymbolKind.EnumMember) {
