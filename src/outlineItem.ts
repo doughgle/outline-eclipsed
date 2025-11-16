@@ -1,6 +1,45 @@
 import * as vscode from 'vscode';
 
 /**
+ * Maps VS Code SymbolKind to the corresponding ThemeIcon id.
+ * Uses VS Code's built-in symbol icon names.
+ * 
+ * @param kind - The symbol kind to map
+ * @returns ThemeIcon id string
+ */
+function getIconIdForSymbolKind(kind: vscode.SymbolKind): string {
+    switch (kind) {
+        case vscode.SymbolKind.File: return 'symbol-file';
+        case vscode.SymbolKind.Module: return 'symbol-module';
+        case vscode.SymbolKind.Namespace: return 'symbol-namespace';
+        case vscode.SymbolKind.Package: return 'symbol-package';
+        case vscode.SymbolKind.Class: return 'symbol-class';
+        case vscode.SymbolKind.Method: return 'symbol-method';
+        case vscode.SymbolKind.Property: return 'symbol-property';
+        case vscode.SymbolKind.Field: return 'symbol-field';
+        case vscode.SymbolKind.Constructor: return 'symbol-constructor';
+        case vscode.SymbolKind.Enum: return 'symbol-enum';
+        case vscode.SymbolKind.Interface: return 'symbol-interface';
+        case vscode.SymbolKind.Function: return 'symbol-function';
+        case vscode.SymbolKind.Variable: return 'symbol-variable';
+        case vscode.SymbolKind.Constant: return 'symbol-constant';
+        case vscode.SymbolKind.String: return 'symbol-string';
+        case vscode.SymbolKind.Number: return 'symbol-number';
+        case vscode.SymbolKind.Boolean: return 'symbol-boolean';
+        case vscode.SymbolKind.Array: return 'symbol-array';
+        case vscode.SymbolKind.Object: return 'symbol-object';
+        case vscode.SymbolKind.Key: return 'symbol-key';
+        case vscode.SymbolKind.Null: return 'symbol-null';
+        case vscode.SymbolKind.EnumMember: return 'symbol-enum-member';
+        case vscode.SymbolKind.Struct: return 'symbol-struct';
+        case vscode.SymbolKind.Event: return 'symbol-event';
+        case vscode.SymbolKind.Operator: return 'symbol-operator';
+        case vscode.SymbolKind.TypeParameter: return 'symbol-type-parameter';
+        default: return 'symbol-misc';
+    }
+}
+
+/**
  * Represents an item in the outline tree.
  * Generic model that can represent different symbol types across languages.
  * 
@@ -38,8 +77,14 @@ export class OutlineItem extends vscode.TreeItem {
                 : vscode.TreeItemCollapsibleState.None
         );
 
-        // Use 'symbol-string' icon (abc icon) - same as VS Code default outline for markdown
-        this.iconPath = new vscode.ThemeIcon('symbol-string');
+        // Use VS Code's native icon mapping for symbol kinds
+        // This provides language-appropriate icons (function, class, method, etc.)
+        if (symbolKind !== undefined) {
+            this.iconPath = new vscode.ThemeIcon(getIconIdForSymbolKind(symbolKind));
+        } else {
+            // Fallback for markdown or other non-symbol-based content
+            this.iconPath = new vscode.ThemeIcon('symbol-string');
+        }
         
         // No description needed - level is shown through tree hierarchy
         this.description = undefined;
