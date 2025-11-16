@@ -6,6 +6,13 @@ import { OutlineItem } from '../outlineItem';
 suite('PI-3: TreeDragAndDropController Tests', () => {
 
 	test('Should serialize OutlineItem data for drag operation', async () => {
+		// Open a markdown document since drag/drop is only supported for markdown
+		const doc = await vscode.workspace.openTextDocument({
+			content: '# Test\n\nContent',
+			language: 'markdown'
+		});
+		await vscode.window.showTextDocument(doc);
+		
 		const range = new vscode.Range(5, 0, 10, 20);
 		const selRange = new vscode.Range(5, 0, 5, 15);
 		const item = new OutlineItem('Test Heading', 1, range, selRange);
@@ -31,6 +38,13 @@ suite('PI-3: TreeDragAndDropController Tests', () => {
 	});
 
 	test('Should deserialize drag data on drop', async () => {
+		// Open a markdown document since drag/drop is only supported for markdown
+		const doc = await vscode.workspace.openTextDocument({
+			content: '# Test\n\nContent',
+			language: 'markdown'
+		});
+		await vscode.window.showTextDocument(doc);
+		
 		const controller = new TreeDragAndDropController();
 		const dataTransfer = new vscode.DataTransfer();
 		
@@ -336,6 +350,13 @@ suite('PI-6: Multi-Select Drag & Drop Unit Tests', () => {
 			[],
 			vscode.SymbolKind.Module
 		);
+		
+		// Open a markdown document since drag/drop is only supported for markdown
+		const doc = await vscode.workspace.openTextDocument({
+			content: '# Test\n\nContent',
+			language: 'markdown'
+		});
+		await vscode.window.showTextDocument(doc);
 		
 		const controller = new TreeDragAndDropController();
 		const dataTransfer = new vscode.DataTransfer();
