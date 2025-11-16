@@ -21,7 +21,7 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 - **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
 - **Real-Time Updates**: The tree refreshes automatically as you edit the document.
 - **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
-- **Rich Information Display**: Tree items show line ranges (e.g., "L6-L11") and detailed tooltips with symbol type and location.
+- **Rich Information Display**: Tree items show values for constants and data keys, with detailed tooltips including symbol type and line information.
 - **Multi-Language Support (view-only for now)**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop currently limited to Markdown.
 - **Graceful Language Server Activation**: Outline auto-refreshes when symbols become available; shows a short status message if symbols aren't ready yet.
 
