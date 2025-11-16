@@ -698,6 +698,7 @@ More content
 
 ## Heading 2
 
+
 Some text`;
 		
 		const document = await vscode.workspace.openTextDocument({
@@ -711,21 +712,17 @@ Some text`;
 		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 1);
 		
-		// First heading should show its full range
+		// Markdown headings don't have values, so description should be undefined
 		const h1 = rootItems[0];
-		assert.ok(h1.description, 'Description should be set');
-		assert.ok(typeof h1.description === 'string', 'Description should be a string');
-		assert.ok((h1.description as string).includes('L1'), 'Description should include line number');
+		assert.strictEqual(h1.description, undefined, 'Markdown headings should not have descriptions');
 		
 		// Check child
 		const children = await provider.getChildren(h1);
 		const h2 = children[0]; // First child (not placeholder)
-		assert.ok(h2.description, 'Child description should be set');
-		assert.ok(typeof h2.description === 'string', 'Child description should be a string');
-		assert.ok((h2.description as string).includes('L'), 'Child description should include line indicator');
+		assert.strictEqual(h2.description, undefined, 'Markdown child headings should not have descriptions');
 	});
 
-	test('Single-line markdown items should show single line in description', async () => {
+	test('Markdown items should not show line numbers in description', async () => {
 		const content = `# First
 # Second
 # Third`;
@@ -741,13 +738,13 @@ Some text`;
 		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 3);
 		
-		// Each heading on its own line
-		assert.strictEqual(rootItems[0].description, 'L1');
-		assert.strictEqual(rootItems[1].description, 'L2');
-		assert.strictEqual(rootItems[2].description, 'L3');
+		// Markdown headings should not have descriptions (line numbers removed per PI-9 update)
+		assert.strictEqual(rootItems[0].description, undefined);
+		assert.strictEqual(rootItems[1].description, undefined);
+		assert.strictEqual(rootItems[2].description, undefined);
 	});
 
-	test('Multi-line markdown items should show line range in description', async () => {
+	test('Multi-line markdown items should not show line range in description', async () => {
 		const content = `# Heading 1
 
 Line 1
@@ -767,13 +764,9 @@ Line 3
 		const rootItems = provider.rootItems;
 		assert.strictEqual(rootItems.length, 2);
 		
-		// First heading spans lines 1-6 (0-5 in 0-based)
-		const h1 = rootItems[0];
-		assert.ok(typeof h1.description === 'string', 'Description should be a string');
-		const desc = h1.description as string;
-		assert.ok(desc.includes('L1'), 'Should include start line');
-		assert.ok(desc.includes('L6'), 'Should include end line');
-		assert.ok(desc.includes('-'), 'Should show range with dash');
+		// Markdown headings don't have descriptions (line numbers removed per PI-9 update)
+		assert.strictEqual(rootItems[0].description, undefined);
+		assert.strictEqual(rootItems[1].description, undefined);
 	});
 
 	test('Markdown items should have tooltips with heading text and line info', async () => {

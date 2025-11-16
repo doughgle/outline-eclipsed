@@ -639,7 +639,7 @@ Content 2`;
 
 suite('PI-9: Description and Tooltip Integration Tests', () => {
 	
-	test('Outline items should have description with line range for markdown', async () => {
+	test('Extension should handle markdown documents', async () => {
 		// Create a markdown document
 		const document = await vscode.workspace.openTextDocument({
 			content: '# Heading 1\n\nSome content\n\n## Heading 2\n\nMore content',
@@ -649,7 +649,7 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 		await vscode.window.showTextDocument(document);
 		await new Promise(resolve => setTimeout(resolve, 500));
 
-		// Extension should be active and showing descriptions
+		// Extension should be active
 		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
 		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
 	});
@@ -669,7 +669,7 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
 	});
 
-	test('Description should show single line for single-line items', async () => {
+	test('Extension should handle single-line markdown items', async () => {
 		// Create a simple markdown document with short headings
 		const document = await vscode.workspace.openTextDocument({
 			content: '# First\n# Second\n# Third',
@@ -684,7 +684,7 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
 	});
 
-	test('Description should show line range for multi-line items', async () => {
+	test('Extension should handle multi-line markdown items', async () => {
 		// Create a markdown document with multi-line sections
 		const document = await vscode.workspace.openTextDocument({
 			content: '# Heading 1\n\nContent line 1\nContent line 2\nContent line 3\n\n## Heading 2\n\nMore content',

@@ -51,7 +51,7 @@ function getSymbolKindName(kind: vscode.SymbolKind): string {
 }
 
 /**
- * Formats a line range for display.
+ * Formats a line range for display in tooltips.
  * PI-9: Shows line numbers in 1-based indexing (L6 instead of L5 for line index 5).
  * 
  * @param range - The range to format
@@ -66,6 +66,127 @@ function formatLineRange(range: vscode.Range): string {
     } else {
         return `L${startLine}-L${endLine}`;
     }
+}
+
+/**
+ * Extracts a value description for the symbol.
+ * PI-9: For constants/variables, extracts the assigned value from document.
+ * For data formats (JSON, YAML, TOML), extracts the value.
+ * 
+ * @param document - The document containing the symbol
+ * @param range - Full range of the symbol
+ * @param selectionRange - Range of just the symbol name/key
+ * @param symbolKind - The kind of symbol
+ * @param languageId - The language ID of the document
+ * @returns Description string (truncated to one line) or undefined
+ */
+function extractValueDescription(
+    document: vscode.TextDocument | undefined,
+    range: vscode.Range,
+    selectionRange: vscode.Range,
+    symbolKind: vscode.SymbolKind | undefined,
+    languageId: string | undefined
+): string | undefined {
+    if (!document) {
+        return undefined;
+    }
+
+    const lang = languageId || document.languageId;
+    
+    // For data interchange formats (JSON, YAML, TOML), extract the value
+    if (lang === 'json' || lang === 'jsonc' || lang === 'yaml' || lang === 'toml') {
+        return extractDataValue(document, range, selectionRange);
+    }
+    
+    // For programming languages, only show values for constants and variables
+    if (symbolKind === vscode.SymbolKind.Constant || 
+        symbolKind === vscode.SymbolKind.Variable ||
+        symbolKind === vscode.SymbolKind.EnumMember) {
+        return extractConstantValue(document, range, selectionRange);
+    }
+    
+    return undefined;
+}
+
+/**
+ * Extracts the value from data format files (JSON, YAML, TOML).
+ * Truncates to single line and limits length.
+ */
+function extractDataValue(
+    document: vscode.TextDocument,
+    range: vscode.Range,
+    selectionRange: vscode.Range
+): string | undefined {
+    try {
+        // Get the full line containing the selection
+        const line = document.lineAt(selectionRange.start.line);
+        const lineText = line.text;
+        
+        // Try to extract value after colon or equals
+        const colonMatch = lineText.match(/:\s*(.+?)$/);
+        const equalsMatch = lineText.match(/=\s*(.+?)$/);
+        
+        let value = colonMatch?.[1] || equalsMatch?.[1];
+        
+        if (!value) {
+            // For multiline values, try to get the first line of content
+            if (range.end.line > selectionRange.end.line) {
+                const nextLine = document.lineAt(selectionRange.start.line + 1);
+                value = nextLine.text.trim();
+            }
+        }
+        
+        if (value) {
+            // Remove trailing comma, semicolon, braces, brackets
+            value = value.replace(/[,;{}\[\]]+$/, '').trim();
+            // Truncate to reasonable length and ensure single line
+            value = value.replace(/\n.*/g, '').trim();
+            if (value.length > 50) {
+                value = value.substring(0, 47) + '...';
+            }
+            return value;
+        }
+    } catch (error) {
+        // Ignore extraction errors
+    }
+    
+    return undefined;
+}
+
+/**
+ * Extracts the value assigned to a constant or variable.
+ * Looks for assignment on the same line or next line.
+ */
+function extractConstantValue(
+    document: vscode.TextDocument,
+    range: vscode.Range,
+    selectionRange: vscode.Range
+): string | undefined {
+    try {
+        // Get the line containing the symbol
+        const line = document.lineAt(selectionRange.start.line);
+        const lineText = line.text;
+        
+        // Look for various assignment patterns: = value, : value, := value
+        const assignmentMatch = lineText.match(/[:=]\s*(.+?)(?:[,;]|$)/);
+        
+        if (assignmentMatch && assignmentMatch[1]) {
+            let value = assignmentMatch[1].trim();
+            // Remove trailing semicolons, commas
+            value = value.replace(/[,;]+$/, '').trim();
+            // Ensure single line
+            value = value.replace(/\n.*/g, '').trim();
+            // Truncate if too long
+            if (value.length > 50) {
+                value = value.substring(0, 47) + '...';
+            }
+            return value;
+        }
+    } catch (error) {
+        // Ignore extraction errors
+    }
+    
+    return undefined;
 }
 
 /**
@@ -106,7 +227,7 @@ function createTooltip(label: string, range: vscode.Range, symbolKind?: vscode.S
  * - range: Full extent of the symbol (entire section including content)
  * - selectionRange: Just the identifier (heading line only)
  * 
- * PI-9: Enriched with description (line range) and tooltip (detailed info)
+ * PI-9: Enriched with description (value for constants/data) and tooltip (detailed info)
  */
 export class OutlineItem extends vscode.TreeItem {
     /**
@@ -122,6 +243,7 @@ export class OutlineItem extends vscode.TreeItem {
      * @param selectionRange - Identifier range (heading line only)
      * @param children - Child outline items
      * @param symbolKind - Optional VS Code symbol kind for icon mapping
+     * @param document - Optional document for extracting values
      */
     constructor(
         public readonly label: string,
@@ -129,7 +251,8 @@ export class OutlineItem extends vscode.TreeItem {
         public readonly range: vscode.Range,
         public readonly selectionRange: vscode.Range,
         public readonly children: OutlineItem[] = [],
-        public readonly symbolKind?: vscode.SymbolKind
+        public readonly symbolKind?: vscode.SymbolKind,
+        document?: vscode.TextDocument
     ) {
         super(
             label,
@@ -147,10 +270,17 @@ export class OutlineItem extends vscode.TreeItem {
             this.iconPath = new vscode.ThemeIcon('symbol-string');
         }
         
-        // PI-9: Show line range in description
-        this.description = formatLineRange(range);
+        // PI-9: Extract value description for constants and data formats
+        // Don't show line numbers - show values instead where applicable
+        this.description = extractValueDescription(
+            document,
+            range,
+            selectionRange,
+            symbolKind,
+            document?.languageId
+        );
         
-        // PI-9: Provide detailed tooltip with symbol info
+        // PI-9: Provide detailed tooltip with symbol info and line numbers
         this.tooltip = createTooltip(label, range, symbolKind);
         
         // Set context value for future command filtering
