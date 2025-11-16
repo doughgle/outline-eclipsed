@@ -70,9 +70,10 @@ function formatLineRange(range: vscode.Range): string {
 
 /**
  * Extracts a value description for the symbol.
- * PI-9: For constants/variables, extracts the assigned value from document.
- * For data formats (JSON, YAML, TOML), extracts the value.
+ * PI-9: Prefers symbol.detail from language server when available.
+ * Falls back to parsing document text for constants/variables in data formats.
  * 
+ * @param symbolDetail - The detail property from DocumentSymbol (from language server)
  * @param document - The document containing the symbol
  * @param range - Full range of the symbol
  * @param selectionRange - Range of just the symbol name/key
@@ -81,12 +82,31 @@ function formatLineRange(range: vscode.Range): string {
  * @returns Description string (truncated to one line) or undefined
  */
 function extractValueDescription(
+    symbolDetail: string | undefined,
     document: vscode.TextDocument | undefined,
     range: vscode.Range,
     selectionRange: vscode.Range,
     symbolKind: vscode.SymbolKind | undefined,
     languageId: string | undefined
 ): string | undefined {
+    // First, try to use the detail from the language server if available
+    // This is more reliable than parsing document text
+    if (symbolDetail) {
+        // For constants and variables, the detail often contains the value or type info
+        if (symbolKind === vscode.SymbolKind.Constant || 
+            symbolKind === vscode.SymbolKind.Variable ||
+            symbolKind === vscode.SymbolKind.EnumMember) {
+            // Clean up the detail: truncate and ensure single line
+            let detail = symbolDetail.trim();
+            detail = detail.replace(/\n.*/g, '').trim();
+            if (detail.length > 50) {
+                detail = detail.substring(0, 47) + '...';
+            }
+            return detail;
+        }
+    }
+    
+    // Fallback: parse document text for data formats or when detail is not available
     if (!document) {
         return undefined;
     }
@@ -98,7 +118,7 @@ function extractValueDescription(
         return extractDataValue(document, range, selectionRange);
     }
     
-    // For programming languages, only show values for constants and variables
+    // For programming languages without detail, parse the value from source
     if (symbolKind === vscode.SymbolKind.Constant || 
         symbolKind === vscode.SymbolKind.Variable ||
         symbolKind === vscode.SymbolKind.EnumMember) {
@@ -167,8 +187,8 @@ function extractConstantValue(
         const line = document.lineAt(selectionRange.start.line);
         const lineText = line.text;
         
-        // Look for various assignment patterns: = value, : value, := value
-        const assignmentMatch = lineText.match(/[:=]\s*(.+?)(?:[,;]|$)/);
+        // Look for assignment pattern: = value (prioritize = over : to avoid type annotations)
+        const assignmentMatch = lineText.match(/=\s*(.+?)(?:[,;]|$)/);
         
         if (assignmentMatch && assignmentMatch[1]) {
             let value = assignmentMatch[1].trim();
@@ -199,7 +219,6 @@ function extractConstantValue(
  * @returns MarkdownString for tooltip
  */
 function createTooltip(label: string, range: vscode.Range, symbolKind?: vscode.SymbolKind): vscode.MarkdownString {
-    const lineRange = formatLineRange(range);
     const startLine = range.start.line + 1;
     const endLine = range.end.line + 1;
     
@@ -243,7 +262,8 @@ export class OutlineItem extends vscode.TreeItem {
      * @param selectionRange - Identifier range (heading line only)
      * @param children - Child outline items
      * @param symbolKind - Optional VS Code symbol kind for icon mapping
-     * @param document - Optional document for extracting values
+     * @param document - Optional document for extracting values (fallback)
+     * @param symbolDetail - Optional detail from DocumentSymbol (preferred)
      */
     constructor(
         public readonly label: string,
@@ -252,7 +272,8 @@ export class OutlineItem extends vscode.TreeItem {
         public readonly selectionRange: vscode.Range,
         public readonly children: OutlineItem[] = [],
         public readonly symbolKind?: vscode.SymbolKind,
-        document?: vscode.TextDocument
+        document?: vscode.TextDocument,
+        symbolDetail?: string
     ) {
         super(
             label,
@@ -271,8 +292,9 @@ export class OutlineItem extends vscode.TreeItem {
         }
         
         // PI-9: Extract value description for constants and data formats
-        // Don't show line numbers - show values instead where applicable
+        // Prefer symbolDetail from language server, fall back to parsing document text
         this.description = extractValueDescription(
+            symbolDetail,
             document,
             range,
             selectionRange,

@@ -74,7 +74,8 @@ export class GenericOutlineProvider extends OutlineProvider {
                 symbol.selectionRange,
                 children,
                 symbol.kind,
-                document
+                document,
+                symbol.detail  // Pass the detail from language server
             );
             
             // Set parent references for children
