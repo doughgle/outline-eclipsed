@@ -51,24 +51,6 @@ function getSymbolKindName(kind: vscode.SymbolKind): string {
 }
 
 /**
- * Formats a line range for display in tooltips.
- * PI-9: Shows line numbers in 1-based indexing (L6 instead of L5 for line index 5).
- * 
- * @param range - The range to format
- * @returns Formatted line range (e.g., "L6" or "L6-L11")
- */
-function formatLineRange(range: vscode.Range): string {
-    const startLine = range.start.line + 1;  // Convert to 1-based
-    const endLine = range.end.line + 1;      // Convert to 1-based
-    
-    if (startLine === endLine) {
-        return `L${startLine}`;
-    } else {
-        return `L${startLine}-L${endLine}`;
-    }
-}
-
-/**
  * Extracts a value description for the symbol.
  * PI-9: Uses symbol.detail from language server when available.
  * Avoids re-parsing document text unless necessary.
