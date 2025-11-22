@@ -183,19 +183,15 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			const document = editor.document;
 			console.log(`PI-6: Moving ${draggedItems.length} sections to line ${targetLine}`);
 			
-			// PI-6: Build full OutlineItem objects with children ranges
-			const sourceItems: OutlineItem[] = [];
-			for (const itemData of draggedItems) {
-				const item = this.findItemAtLine(document, itemData.range.start.line);
-				if (item) {
-					sourceItems.push(item);
-				}
-			}
+			// PI-6: Use ranges directly from serialized data (works for all languages)
+			// Convert serialized items to outline items with proper ranges
+			const sourceItems: {start: number, end: number, label: string}[] = draggedItems.map(itemData => ({
+				start: itemData.range.start.line,
+				end: itemData.range.end.line,
+				label: itemData.label
+			}));
 			
-			if (sourceItems.length === 0) {
-				console.error('PI-6: No valid source items found');
-				return false;
-			}
+			console.log(`PI-6: Source items: ${sourceItems.map(s => `${s.label}(${s.start}-${s.end})`).join(', ')}`);
 			
 			// PI-6: Work with document as array of lines
 			const allLines = document.getText().split('\n');
@@ -210,17 +206,19 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			
 			// PI-6: Extract sections in reverse order (bottom to top) to avoid line shifts
 			const sortedItems = [...sourceItems].sort((a, b) => 
-				b.range.start.line - a.range.start.line
+				b.start - a.start
 			);
 			
 			for (const item of sortedItems) {
-				let sectionStart = item.range.start.line;
-				let sectionEnd = item.range.end.line;
+				let sectionStart = item.start;
+				let sectionEnd = item.end;
 				
 				// Include trailing blank line if it exists
 				if (sectionEnd + 1 < allLines.length && allLines[sectionEnd + 1].trim() === '') {
 					sectionEnd++;
 				}
+				
+				console.log(`PI-6: Extracting ${item.label} from lines ${sectionStart}-${sectionEnd}`);
 				
 				// Extract the section
 				const sectionLines = allLines.slice(sectionStart, sectionEnd + 1);
@@ -537,14 +535,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			}
 
 			// PI-6: Execute the move (single or multiple items)
-			if (draggedItems.length === 1) {
-				// Single item - use existing optimized logic
-				const sourceStartLine = draggedItems[0].range.start.line;
-				await this.moveSection(editor, sourceStartLine, targetLine);
-			} else {
-				// Multiple items - use batch move logic
-				await this.moveSections(editor, draggedItems, targetLine);
-			}
+			// Use moveSections for all cases to ensure consistent behavior with YAML
+			await this.moveSections(editor, draggedItems, targetLine);
 			
 		} catch (error) {
 			console.error('Failed to parse drag data:', error);
