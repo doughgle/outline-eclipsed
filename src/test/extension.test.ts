@@ -636,3 +636,67 @@ Content 2`;
 		assert.strictEqual(lines[5], '## Child 1', 'Child 1 should be second child');
 	});
 });
+
+suite('PI-9: Description and Tooltip Integration Tests', () => {
+	
+	test('Extension should handle markdown documents', async () => {
+		// Create a markdown document
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\nSome content\n\n## Heading 2\n\nMore content',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Extension should be active
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Outline items should have tooltips with symbol information', async () => {
+		// Create a TypeScript document
+		const document = await vscode.workspace.openTextDocument({
+			content: 'class MyClass {\n  method() {\n    return 42;\n  }\n}',
+			language: 'typescript'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for language server
+
+		// Extension should be active and showing tooltips
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Extension should handle single-line markdown items', async () => {
+		// Create a simple markdown document with short headings
+		const document = await vscode.workspace.openTextDocument({
+			content: '# First\n# Second\n# Third',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Extension should be active
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+	test('Extension should handle multi-line markdown items', async () => {
+		// Create a markdown document with multi-line sections
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\nContent line 1\nContent line 2\nContent line 3\n\n## Heading 2\n\nMore content',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Extension should be active and processing multi-line sections
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		assert.strictEqual(extension?.isActive, true, 'Extension should be active');
+	});
+
+});

@@ -13,14 +13,17 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 ![demo](https://videoapi-muybridge.vimeocdn.com/animated-thumbnails/image/afa8a690-2e99-4f3f-8091-0471213bb984.gif?ClientID=sulu&Date=1761467805&Signature=b3c03e96e6468db8e83b3227cc3748f051df2334)
 
+
 ### Features
 
-- **Drag & Drop Reordering**: Drag symbols to reorder sections. Nested symbols move with their parent automatically.
+- **Drag & Drop Reordering (Markdown only)**: Drag headings to reorder sections. Nested headings move with their parent automatically.
 - **Bidirectional Sync**: Click a symbol to jump to that location. Move your cursor, and the tree highlights the current symbol.
 - **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
 - **Real-Time Updates**: The tree refreshes automatically as you edit the document.
 - **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
-- **Multi-Language Support**: Works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more).
+- **Rich Information Display**: Tree items show values for constants and data keys, with detailed tooltips including symbol type and line information.
+- **Multi-Language Support (view-only for now)**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop currently limited to Markdown.
+- **Graceful Language Server Activation**: Outline auto-refreshes when symbols become available; shows a short status message if symbols aren't ready yet.
 
 ### Installation
 
@@ -41,12 +44,12 @@ Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
 
 ### Language Support
 
-- ✅ **Markdown** - H1-H6 headings with custom provider
-- ✅ **TypeScript/JavaScript** - Classes, functions, methods, properties
-- ✅ **Python** - Classes, functions, methods
-- ✅ **Java** - Classes, methods, fields
-- ✅ **C/C++** - Classes, functions, structs
-- ✅ **Any language with VS Code symbol provider** - Generic support
+- ✅ **Markdown** — H1–H6 headings with custom provider (full drag & drop)
+- ✅ **TypeScript/JavaScript** — Classes, functions, methods, properties (view-only outline; drag & drop disabled)
+- ✅ **Python** — Classes, functions, methods (view-only outline; drag & drop disabled)
+- ✅ **Java** — Classes, methods, fields (view-only outline; drag & drop disabled)
+- ✅ **C/C++** — Classes, functions, structs (view-only outline; drag & drop disabled)
+- ✅ **Any language with VS Code symbol provider** — Generic viewing support
 
 ### Development
 
@@ -78,10 +81,13 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 
 ### [Roadmap](https://github.com/doughgle/outline-eclipsed/issues)
 
-- ✅ **PI-0-5**: Markdown outline with drag & drop and visual feedback
-- ✅ **PI-6**: Multi-select drag & drop
-- 🔲 **PI-7**: Configuration options
-- 🔲 **Future**: Support for JavaScript, TypeScript, Python, and other languages
+- ✅ **PI-0–7**: Markdown outline, nested drag & drop, multi-select, enhanced highlights
+- ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python) — drag & drop deferred
+- ✅ **PI-9**: Rich tree item descriptions and tooltips — line ranges and symbol information
+- 🔲 **PI-10**: Show outline for markdown preview when focused
+- 🔲 **PI-11**: Additional markdown symbols (code blocks, quotes)
+- 🔲 **PI-12**: Configuration options
+- 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 
 ### License
 

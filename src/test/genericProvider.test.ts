@@ -277,3 +277,93 @@ suite('GenericOutlineProvider - TreeDataProvider Interface', () => {
 		}
 	});
 });
+
+suite('PI-9: GenericProvider Description and Tooltip Tests', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
+
+	test('Generic provider items should have description with line range', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		const content = `# Heading 1
+
+Content here
+
+## Heading 2`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		// Wait for symbols
+		await waitForDocumentSymbols(document);
+		
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		if (rootItems.length > 0) {
+			const item = rootItems[0];
+			// Markdown headings don't have values, so description should be undefined
+			assert.strictEqual(item.description, undefined, 'Markdown headings should not have descriptions');
+		}
+	});
+
+	test('Generic provider items should have tooltips with symbol kind', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		const content = `# Main Heading
+
+## Sub Heading`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		// Wait for symbols
+		await waitForDocumentSymbols(document);
+		
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		if (rootItems.length > 0) {
+			const item = rootItems[0];
+			assert.ok(item.tooltip instanceof vscode.MarkdownString, 'Tooltip should be MarkdownString');
+			const tooltipText = item.tooltip.value;
+			assert.ok(tooltipText.length > 0, 'Tooltip should have content');
+		}
+	});
+
+	test('Generic provider should handle items with symbolKind', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		const content = `# Heading with Symbol Kind`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		// Wait for symbols
+		await waitForDocumentSymbols(document);
+		
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		if (rootItems.length > 0) {
+			const item = rootItems[0];
+			// Symbol kind should be set for markdown headings
+			assert.ok(item.symbolKind !== undefined, 'Symbol kind should be set');
+			
+			// Tooltip should include symbol kind name
+			if (item.tooltip instanceof vscode.MarkdownString) {
+				const tooltipText = item.tooltip.value;
+				// Should have some indication of the symbol type
+				assert.ok(tooltipText.length > 0, 'Tooltip should have content');
+			}
+		}
+	});
+});

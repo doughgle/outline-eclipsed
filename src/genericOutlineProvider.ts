@@ -33,7 +33,7 @@ export class GenericOutlineProvider extends OutlineProvider {
             // Check if we got DocumentSymbols (hierarchical) or SymbolInformation (flat)
             if (symbols.length > 0 && this.isDocumentSymbol(symbols[0])) {
                 // DocumentSymbol already has hierarchy - preserve it
-                const rootItems = this.convertDocumentSymbolsToOutlineItems(symbols as vscode.DocumentSymbol[]);
+                const rootItems = this.convertDocumentSymbolsToOutlineItems(symbols as vscode.DocumentSymbol[], document);
                 console.log(`Parsed ${this.countTotalItems(rootItems)} symbols (${rootItems.length} root) from ${document.fileName}`);
                 return rootItems;
             } else {
@@ -54,9 +54,10 @@ export class GenericOutlineProvider extends OutlineProvider {
      * This is the preferred path for languages that provide DocumentSymbol.
      * 
      * @param symbols - Array of DocumentSymbols with native hierarchy
+     * @param document - The document containing these symbols
      * @returns Array of root OutlineItems with nested children
      */
-    protected convertDocumentSymbolsToOutlineItems(symbols: vscode.DocumentSymbol[]): OutlineItem[] {
+    protected convertDocumentSymbolsToOutlineItems(symbols: vscode.DocumentSymbol[], document: vscode.TextDocument): OutlineItem[] {
         const convertSymbol = (symbol: vscode.DocumentSymbol): OutlineItem => {
             const name = this.sanitizeSymbolName(symbol.name);
             const level = this.getLevelFromSymbol(symbol);
@@ -72,7 +73,9 @@ export class GenericOutlineProvider extends OutlineProvider {
                 symbol.range,
                 symbol.selectionRange,
                 children,
-                symbol.kind
+                symbol.kind,
+                document,
+                symbol.detail  // Pass the detail from language server
             );
             
             // Set parent references for children
@@ -148,7 +151,8 @@ export class GenericOutlineProvider extends OutlineProvider {
                 range,
                 selectionRange,
                 [], // Children will be populated in buildHierarchy
-                kind
+                kind,
+                document
             );
 
             items.push(item);

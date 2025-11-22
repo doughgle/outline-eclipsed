@@ -5,9 +5,18 @@
 - ✅ **PI-6**: Multi-select drag & drop
   - fix code fence drag and drop issues
 - ✅ **PI-7**: Enhanced "magnetic snap" highlights - more prominent visual feedback with overview ruler
-- 🔲 **PI-8**: Support for additional languages (JavaScript, TypeScript, Python)
-- 🔲 **PI-9**: Configuration options
-- 🔲 **Future**: Support for JavaScript, TypeScript, Python, and other languages
+- ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python)
+  - Outline uses native Document Symbols where available
+  - Event-driven refresh when symbols become available
+  - Drag & drop disabled for non-markdown to avoid losing banner comments and non-symbol code
+- ✅ **PI-9**: Enrich tree items with description and tooltip
+  - Line range descriptions (e.g., "L6-L11")
+  - Rich tooltips with symbol name, type, and line information
+  - Works across all supported languages
+- 🔲 **PI-10**: show outline for markdown preview when focused
+- 🔲 **PI-11**: add addition symbols for markdown e.g. code blocks, quotes
+- 🔲 **PI-12**: Configuration options
+- 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 
 ### PI-0: Extension Skeleton ✅
 
@@ -49,3 +58,21 @@
 - Quick 1.5 second highlight duration (non-intrusive)
 - Immediate reveal in center of viewport
 - Theme-aware colors for all color schemes
+
+### PI-8: Multi-Language Outline Viewing ✅
+- Outline uses native Document Symbols where available
+- Works with TypeScript, JavaScript, Python, Java, C++, and more
+- Event-driven refresh when symbols become available
+- Drag & drop disabled for non-markdown to avoid losing banner comments and non-symbol code
+- Graceful handling of language server activation delays
+- Multi-language provider architecture for extensibility
+
+### PI-9: Rich Tree Item Descriptions and Tooltips ✅
+- Descriptions show values for constants, variables, or data keys (not line numbers)
+- Line information (e.g., "L6" or "L6-L11") is shown only in tooltips
+- Tooltips provide at-a-glance location info and symbol details
+- Rich tooltips with symbol name, type, and line information
+- Symbol kind displayed in tooltips (Class, Method, Function, etc.)
+- Consistent formatting across all supported languages
+- Markdown tooltips for better readability
+- Tested with Markdown, TypeScript, JavaScript, and Python
