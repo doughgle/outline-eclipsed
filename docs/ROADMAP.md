@@ -8,14 +8,19 @@
 - ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python)
   - Outline uses native Document Symbols where available
   - Event-driven refresh when symbols become available
-  - Drag & drop disabled for non-markdown to avoid losing banner comments and non-symbol code
+  - Drag & drop initially disabled for non-markdown to avoid losing banner comments and non-symbol code
 - ✅ **PI-9**: Enrich tree items with description and tooltip
   - Line range descriptions (e.g., "L6-L11")
   - Rich tooltips with symbol name, type, and line information
   - Works across all supported languages
-- 🔲 **PI-10**: show outline for markdown preview when focused
-- 🔲 **PI-11**: add addition symbols for markdown e.g. code blocks, quotes
-- 🔲 **PI-12**: Configuration options
+- ✅ **PI-10**: JSON/JSONC drag & drop support
+  - Enable drag & drop for JSON and JSONC files
+  - Line-based reordering using DocumentSymbols
+  - Auto-formatting after moves
+  - Preserve comments in JSONC files
+- 🔲 **PI-11**: show outline for markdown preview when focused
+- 🔲 **PI-12**: add addition symbols for markdown e.g. code blocks, quotes
+- 🔲 **PI-13**: Configuration options
 - 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 
 ### PI-0: Extension Skeleton ✅
@@ -76,3 +81,16 @@
 - Consistent formatting across all supported languages
 - Markdown tooltips for better readability
 - Tested with Markdown, TypeScript, JavaScript, and Python
+
+### PI-10: JSON/JSONC Drag & Drop Support ✅
+- Enable drag & drop for JSON and JSONC files
+- Uses DocumentSymbols from VS Code's built-in JSON language server
+- Line-based reordering approach (similar to Markdown)
+- Auto-formatting after moves using VS Code's formatter
+- Preserves comments in JSONC files
+- Multi-select drag & drop support for multiple properties
+- Visual feedback (highlight + scroll-to-reveal) works correctly
+- Deferred features: array element reordering, cross-object property moves
+- Test fixtures: `json-drag-test.json`, `jsonc-drag-test.jsonc`
+- Manual testing guide: `JSON-DRAG-MANUAL-TESTING.md`
+- Tested with JSON and JSONC files
