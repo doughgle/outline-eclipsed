@@ -35,31 +35,34 @@ export class YamlOutlineProvider extends GenericOutlineProvider {
      * - SymbolKind.Property or SymbolKind.Field for YAML keys
      * - Hierarchy is determined by DocumentSymbol.children
      * 
-     * Since GenericOutlineProvider already handles hierarchical DocumentSymbols correctly,
-     * we primarily need to ensure proper level mapping for YAML-specific symbol kinds.
+     * Since GenericOutlineProvider uses DocumentSymbol.children for hierarchy building,
+     * this method only provides fallback level values. The actual hierarchy comes from
+     * the DocumentSymbol tree structure, not these numeric levels.
+     * 
+     * These level mappings are used only when building hierarchy from flat SymbolInformation
+     * (which doesn't have children), but most YAML extensions provide hierarchical DocumentSymbols.
      * 
      * @param symbol - Symbol to extract level from
      * @returns Numeric level (lower number = higher in hierarchy)
      */
     protected getLevelFromSymbol(symbol: vscode.SymbolInformation | vscode.DocumentSymbol): number {
-        // For YAML, we rely on the native DocumentSymbol hierarchy
-        // rather than mapping SymbolKind to levels, since YAML keys at different
-        // depths can have the same SymbolKind (Property/Field)
-        
-        // However, we still provide a basic mapping for consistency
+        // Provide consistent level mapping for YAML symbol kinds
+        // Note: When DocumentSymbol.children is available (typical for YAML),
+        // the GenericOutlineProvider uses that hierarchy instead of these levels
         switch (symbol.kind) {
             case vscode.SymbolKind.Property:
             case vscode.SymbolKind.Field:
             case vscode.SymbolKind.String:
             case vscode.SymbolKind.Object:
             case vscode.SymbolKind.Key:
-                // YAML keys - let hierarchy be determined by parent-child relationships
+                // YAML keys - top level by default
                 return 1;
             
             case vscode.SymbolKind.Array:
+                // Array items slightly lower priority
                 return 2;
             
-            // Fallback to generic mapping
+            // Fallback to generic mapping for other symbol kinds
             default:
                 return super.getLevelFromSymbol(symbol);
         }
