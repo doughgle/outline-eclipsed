@@ -12,6 +12,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	dropMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 	dragMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
 
+	// Languages that support drag & drop reordering
+	private static readonly SUPPORTED_LANGUAGES = ['markdown', 'json', 'jsonc'];
+
 	private highlightDecorationType: vscode.TextEditorDecorationType;
 	private highlightTimeout: NodeJS.Timeout | undefined;
 	private provider: any; // OutlineProvider - using any to avoid circular import
@@ -180,7 +183,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			}
 		} catch (error) {
 			// Formatting is optional - don't fail the operation if formatting fails
-			console.log('Formatting skipped or failed:', error);
+			console.log('JSON formatting skipped or failed:', error);
 		}
 	}
 
@@ -483,10 +486,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drag for markdown and JSON files
+		// Only allow drag for supported languages
 		const editor = vscode.window.activeTextEditor;
-		const supportedLanguages = ['markdown', 'json', 'jsonc'];
-		if (!editor || !supportedLanguages.includes(editor.document.languageId)) {
+		if (!editor || !TreeDragAndDropController.SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}
@@ -525,10 +527,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drop for markdown and JSON files
+		// Only allow drop for supported languages
 		const editor = vscode.window.activeTextEditor;
-		const supportedLanguages = ['markdown', 'json', 'jsonc'];
-		if (!editor || !supportedLanguages.includes(editor.document.languageId)) {
+		if (!editor || !TreeDragAndDropController.SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}

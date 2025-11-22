@@ -93,7 +93,4 @@
 - Deferred features: array element reordering, cross-object property moves
 - Test fixtures: `json-drag-test.json`, `jsonc-drag-test.jsonc`
 - Manual testing guide: `JSON-DRAG-MANUAL-TESTING.md`
-- Symbol kind displayed in tooltips (Class, Method, Function, etc.)
-- Consistent formatting across all supported languages
-- Markdown tooltips for better readability
-- Tested with Markdown, TypeScript, JavaScript, and Python
+- Tested with JSON and JSONC files
