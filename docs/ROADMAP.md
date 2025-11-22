@@ -68,9 +68,9 @@
 - Multi-language provider architecture for extensibility
 
 ### PI-9: Rich Tree Item Descriptions and Tooltips ✅
-- Line range descriptions show at-a-glance location info (e.g., "L6-L11")
-- Single-line items show single line number (e.g., "L6")
-- Multi-line items show full range (e.g., "L6-L11")
+- Descriptions show values for constants, variables, or data keys (not line numbers)
+- Line information (e.g., "L6" or "L6-L11") is shown only in tooltips
+- Tooltips provide at-a-glance location info and symbol details
 - Rich tooltips with symbol name, type, and line information
 - Symbol kind displayed in tooltips (Class, Method, Function, etc.)
 - Consistent formatting across all supported languages
