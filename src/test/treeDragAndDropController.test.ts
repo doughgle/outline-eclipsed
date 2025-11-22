@@ -676,11 +676,14 @@ suite('JSON Drag & Drop Tests', () => {
 		
 		// Verify the property was moved
 		const newContent = editor.document.getText();
-		const lines = newContent.split('\n');
 		
-		// After move, "version" should be first property, "name" should be last
-		assert.ok(lines[1].includes('version'), 'version should be first property');
-		assert.ok(lines[3].includes('name'), 'name should be moved down');
+		// After move and format, "name" should appear after both "version" and "description"
+		const nameIndex = newContent.indexOf('"name"');
+		const versionIndex = newContent.indexOf('"version"');
+		const descriptionIndex = newContent.indexOf('"description"');
+		
+		assert.ok(nameIndex > versionIndex, 'name should appear after version');
+		assert.ok(nameIndex > descriptionIndex, 'name should appear after description');
 	});
 
 	test('Should handle multi-select drag for JSON properties', async () => {
@@ -719,9 +722,17 @@ suite('JSON Drag & Drop Tests', () => {
 		
 		assert.ok(success, 'Multi-select move should succeed');
 		
-		// Verify properties were moved
+		// Verify properties were moved - check order by index positions
 		const newContent = editor.document.getText();
-		assert.ok(newContent.includes('"b"'), 'Property b should remain');
-		assert.ok(newContent.includes('"d"'), 'Property d should remain');
+		const aIndex = newContent.indexOf('"a"');
+		const bIndex = newContent.indexOf('"b"');
+		const cIndex = newContent.indexOf('"c"');
+		const dIndex = newContent.indexOf('"d"');
+		
+		// After move, "b" and "d" should come before "a" and "c"
+		assert.ok(bIndex < aIndex, 'b should appear before a');
+		assert.ok(dIndex < aIndex, 'd should appear before a');
+		assert.ok(bIndex < cIndex, 'b should appear before c');
+		assert.ok(dIndex < cIndex, 'd should appear before c');
 	});
 });

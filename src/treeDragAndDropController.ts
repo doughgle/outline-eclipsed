@@ -171,6 +171,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	/**
 	 * Formats the document using VS Code's built-in formatter.
 	 * Used after drag & drop operations in JSON files to ensure proper formatting.
+	 * Waits for the document change event to ensure formatting is complete.
 	 * 
 	 * @param editor - The text editor to format
 	 */
@@ -179,7 +180,39 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			const document = editor.document;
 			// Only format JSON files (not markdown)
 			if (document.languageId === 'json' || document.languageId === 'jsonc') {
-				await vscode.commands.executeCommand('editor.action.formatDocument');
+				// Create a promise that resolves when the document is changed by formatting
+				await new Promise<void>((resolve, reject) => {
+					let resolved = false;
+					
+					// Listen for document changes
+					const disposable = vscode.workspace.onDidChangeTextDocument((e) => {
+						if (e.document === document && !resolved) {
+							resolved = true;
+							disposable.dispose();
+							resolve();
+						}
+					});
+					
+					// Execute format command
+					vscode.commands.executeCommand('editor.action.formatDocument').then(
+						() => {
+							// Format command completed - if no changes were made, resolve now
+							if (!resolved) {
+								resolved = true;
+								disposable.dispose();
+								resolve();
+							}
+						},
+						(error) => {
+							// Format command failed
+							if (!resolved) {
+								resolved = true;
+								disposable.dispose();
+								reject(error);
+							}
+						}
+					);
+				});
 			}
 		} catch (error) {
 			// Formatting is optional - don't fail the operation if formatting fails
