@@ -1,0 +1,34 @@
+# YAML Drag & Drop Test File
+# Use this file to test various drag & drop scenarios
+
+# Top-level keys (test moving these)
+first_key: value1
+
+second_key:
+  nested_a: value_a
+  nested_b: value_b
+
+third_key:
+  deep:
+    nested:
+      value: deep_value
+
+# Edge case: First item
+alpha: first_item
+
+# Middle items with various structures
+beta:
+  child1: value1
+  child2: value2
+  child3:
+    grandchild: value3
+
+gamma:
+  - item1
+  - item2
+  - item3
+
+delta: simple_value
+
+# Edge case: Last item
+omega: last_item

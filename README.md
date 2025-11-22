@@ -16,13 +16,13 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 ### Features
 
-- **Drag & Drop Reordering (Markdown only)**: Drag headings to reorder sections. Nested headings move with their parent automatically.
+- **Drag & Drop Reordering**: Drag symbols to reorder sections in Markdown and YAML files. Nested items move with their parent automatically.
 - **Bidirectional Sync**: Click a symbol to jump to that location. Move your cursor, and the tree highlights the current symbol.
 - **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
 - **Real-Time Updates**: The tree refreshes automatically as you edit the document.
 - **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
 - **Rich Information Display**: Tree items show values for constants and data keys, with detailed tooltips including symbol type and line information.
-- **Multi-Language Support (view-only for now)**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop currently limited to Markdown.
+- **Multi-Language Support**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop enabled for Markdown and YAML.
 - **Graceful Language Server Activation**: Outline auto-refreshes when symbols become available; shows a short status message if symbols aren't ready yet.
 
 ### Installation
@@ -45,6 +45,7 @@ Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
 ### Language Support
 
 - ✅ **Markdown** — H1–H6 headings with custom provider (full drag & drop)
+- ✅ **YAML** — Keys and nested structures with custom provider (full drag & drop)
 - ✅ **TypeScript/JavaScript** — Classes, functions, methods, properties (view-only outline; drag & drop disabled)
 - ✅ **Python** — Classes, functions, methods (view-only outline; drag & drop disabled)
 - ✅ **Java** — Classes, methods, fields (view-only outline; drag & drop disabled)

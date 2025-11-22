@@ -1,0 +1,34 @@
+# Sample YAML configuration file for testing drag & drop
+version: "3.8"
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    environment:
+      - DEBUG=true
+      - NODE_ENV=production
+    volumes:
+      - ./app:/usr/share/nginx/html
+    
+  database:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: myapp
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    
+  cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data:
+
+networks:
+  default:
+    driver: bridge

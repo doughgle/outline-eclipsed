@@ -455,9 +455,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drag for markdown files to prevent data loss
+		// Only allow drag for markdown and yaml files to prevent data loss
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || editor.document.languageId !== 'markdown') {
+		if (!editor || !['markdown', 'yaml'].includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}
@@ -496,9 +496,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drop for markdown files to prevent data loss
+		// Only allow drop for markdown and yaml files to prevent data loss
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || editor.document.languageId !== 'markdown') {
+		if (!editor || !['markdown', 'yaml'].includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}
