@@ -601,3 +601,170 @@ Content`;
 		assert.strictEqual(headings[1], '# First', 'First should be at end');
 	});
 });
+
+suite('YAML Drag and Drop Tests', () => {
+
+test('Should serialize YAML items for drag operation', async () => {
+const yamlContent = `first: value1
+second: value2
+third: value3
+`;
+const doc = await vscode.workspace.openTextDocument({
+content: yamlContent,
+language: 'yaml'
+});
+await vscode.window.showTextDocument(doc);
+
+const range = new vscode.Range(0, 0, 0, 13);
+const selRange = new vscode.Range(0, 0, 0, 5);
+const item = new OutlineItem('first', 1, range, selRange);
+
+const controller = new TreeDragAndDropController();
+const dataTransfer = new vscode.DataTransfer();
+
+await controller.handleDrag([item], dataTransfer, {} as any);
+
+const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+assert.ok(dragData, 'Drag data should be set for YAML');
+
+const parsed = JSON.parse(dragData!.value as string);
+assert.ok(Array.isArray(parsed), 'Parsed data should be an array');
+assert.strictEqual(parsed.length, 1, 'Should have one item');
+assert.strictEqual(parsed[0].label, 'first');
+});
+
+test('Should handle YAML drop operation', async () => {
+const yamlContent = `first: value1
+second: value2
+third: value3
+`;
+const doc = await vscode.workspace.openTextDocument({
+content: yamlContent,
+language: 'yaml'
+});
+await vscode.window.showTextDocument(doc);
+
+const controller = new TreeDragAndDropController();
+const dataTransfer = new vscode.DataTransfer();
+
+const dragData = JSON.stringify([{
+label: 'first',
+level: 1,
+range: { start: { line: 0, character: 0 }, end: { line: 0, character: 13 } },
+selectionRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 5 } }
+}]);
+
+dataTransfer.set('application/vnd.code.tree.outlineeclipsed', new vscode.DataTransferItem(dragData));
+
+await assert.doesNotReject(
+async () => await controller.handleDrop(undefined, dataTransfer, {} as any)
+);
+});
+
+test('Should handle nested YAML structures', async () => {
+const yamlContent = `services:
+  web:
+    image: nginx
+  database:
+    image: postgres
+volumes:
+  data:
+`;
+const doc = await vscode.workspace.openTextDocument({
+content: yamlContent,
+language: 'yaml'
+});
+await vscode.window.showTextDocument(doc);
+
+// Test dragging a parent key with children
+const range = new vscode.Range(0, 0, 4, 20);
+const selRange = new vscode.Range(0, 0, 0, 8);
+const item = new OutlineItem('services', 1, range, selRange);
+
+const controller = new TreeDragAndDropController();
+const dataTransfer = new vscode.DataTransfer();
+
+await controller.handleDrag([item], dataTransfer, {} as any);
+
+const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+assert.ok(dragData, 'Should handle nested YAML structures');
+});
+
+test('Should handle first YAML item edge case', async () => {
+const yamlContent = `alpha: first
+beta: second
+gamma: third
+`;
+const doc = await vscode.workspace.openTextDocument({
+content: yamlContent,
+language: 'yaml'
+});
+await vscode.window.showTextDocument(doc);
+
+const range = new vscode.Range(0, 0, 0, 12);
+const selRange = new vscode.Range(0, 0, 0, 5);
+const item = new OutlineItem('alpha', 1, range, selRange);
+
+const controller = new TreeDragAndDropController();
+const dataTransfer = new vscode.DataTransfer();
+
+await controller.handleDrag([item], dataTransfer, {} as any);
+
+const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+assert.ok(dragData, 'Should handle first item');
+
+const parsed = JSON.parse(dragData!.value as string);
+assert.strictEqual(parsed[0].label, 'alpha');
+});
+
+test('Should handle last YAML item edge case', async () => {
+const yamlContent = `alpha: first
+beta: second
+omega: last
+`;
+const doc = await vscode.workspace.openTextDocument({
+content: yamlContent,
+language: 'yaml'
+});
+await vscode.window.showTextDocument(doc);
+
+const range = new vscode.Range(2, 0, 2, 11);
+const selRange = new vscode.Range(2, 0, 2, 5);
+const item = new OutlineItem('omega', 1, range, selRange);
+
+const controller = new TreeDragAndDropController();
+const dataTransfer = new vscode.DataTransfer();
+
+await controller.handleDrag([item], dataTransfer, {} as any);
+
+const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+assert.ok(dragData, 'Should handle last item');
+
+const parsed = JSON.parse(dragData!.value as string);
+assert.strictEqual(parsed[0].label, 'omega');
+});
+
+test('Should reject drag for non-supported languages', async () => {
+const pythonContent = `def hello():
+    print("Hello")
+`;
+const doc = await vscode.workspace.openTextDocument({
+content: pythonContent,
+language: 'python'
+});
+await vscode.window.showTextDocument(doc);
+
+const range = new vscode.Range(0, 0, 1, 18);
+const selRange = new vscode.Range(0, 0, 0, 10);
+const item = new OutlineItem('hello', 1, range, selRange);
+
+const controller = new TreeDragAndDropController();
+const dataTransfer = new vscode.DataTransfer();
+
+await controller.handleDrag([item], dataTransfer, {} as any);
+
+// Should not set drag data for unsupported languages
+const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+assert.strictEqual(dragData, undefined, 'Should not support drag for Python');
+});
+});
