@@ -152,10 +152,35 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			}
 
 			console.log(`PI-4: Move operation ${success ? 'succeeded' : 'failed'}`);
+			
+			// Format the document if it's a JSON file
+			if (success) {
+				await this.formatDocument(editor);
+			}
+			
 			return success;
 		} catch (error) {
 			console.error('PI-4: Error moving section:', error);
 			return false;
+		}
+	}
+
+	/**
+	 * Formats the document using VS Code's built-in formatter.
+	 * Used after drag & drop operations in JSON files to ensure proper formatting.
+	 * 
+	 * @param editor - The text editor to format
+	 */
+	private async formatDocument(editor: vscode.TextEditor): Promise<void> {
+		try {
+			const document = editor.document;
+			// Only format JSON files (not markdown)
+			if (document.languageId === 'json' || document.languageId === 'jsonc') {
+				await vscode.commands.executeCommand('editor.action.formatDocument');
+			}
+		} catch (error) {
+			// Formatting is optional - don't fail the operation if formatting fails
+			console.log('Formatting skipped or failed:', error);
 		}
 	}
 
@@ -281,6 +306,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				// PI-6: Highlight all moved sections
 				this.highlightMovedSections(editor, movedRanges);
 				console.log(`PI-6: Successfully moved ${extractedSections.length} sections`);
+				
+				// Format the document if it's a JSON file
+				await this.formatDocument(editor);
 			}
 
 			return success;
@@ -455,9 +483,10 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drag for markdown files to prevent data loss
+		// Only allow drag for markdown and JSON files
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || editor.document.languageId !== 'markdown') {
+		const supportedLanguages = ['markdown', 'json', 'jsonc'];
+		if (!editor || !supportedLanguages.includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}
@@ -496,9 +525,10 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drop for markdown files to prevent data loss
+		// Only allow drop for markdown and JSON files
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || editor.document.languageId !== 'markdown') {
+		const supportedLanguages = ['markdown', 'json', 'jsonc'];
+		if (!editor || !supportedLanguages.includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}

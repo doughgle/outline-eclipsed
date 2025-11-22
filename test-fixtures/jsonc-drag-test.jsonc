@@ -1,0 +1,35 @@
+{
+  // Package metadata
+  "name": "jsonc-drag-test",
+  "version": "2.0.0",
+  "description": "Test file for JSONC drag and drop with comments",
+  
+  // Entry point
+  "main": "dist/index.js",
+  
+  // Author information
+  "author": {
+    "name": "Test Author",
+    "email": "test@example.com"
+  },
+  
+  // License
+  "license": "MIT",
+  
+  /* Build scripts */
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "test": "jest"
+  },
+  
+  // Dependencies section
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  
+  // Development dependencies
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

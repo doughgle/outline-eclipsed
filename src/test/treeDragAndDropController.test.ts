@@ -601,3 +601,127 @@ Content`;
 		assert.strictEqual(headings[1], '# First', 'First should be at end');
 	});
 });
+
+suite('JSON Drag & Drop Tests', () => {
+
+	test('Should allow drag operation for JSON files', async () => {
+		// Create a JSON document
+		const doc = await vscode.workspace.openTextDocument({
+			content: '{\n  "name": "test",\n  "version": "1.0.0"\n}',
+			language: 'json'
+		});
+		await vscode.window.showTextDocument(doc);
+		
+		const range = new vscode.Range(1, 0, 1, 17);
+		const selRange = new vscode.Range(1, 2, 1, 8);
+		const item = new OutlineItem('name', 1, range, selRange);
+		
+		const controller = new TreeDragAndDropController();
+		const dataTransfer = new vscode.DataTransfer();
+		
+		await controller.handleDrag([item], dataTransfer, {} as any);
+		
+		// Verify data was added to DataTransfer
+		const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+		assert.ok(dragData, 'Drag data should be set for JSON files');
+		
+		const parsed = JSON.parse(dragData!.value as string);
+		assert.ok(Array.isArray(parsed), 'Parsed data should be an array');
+		assert.strictEqual(parsed.length, 1, 'Should have one item');
+		assert.strictEqual(parsed[0].label, 'name');
+	});
+
+	test('Should allow drag operation for JSONC files', async () => {
+		// Create a JSONC document (JSON with comments)
+		const doc = await vscode.workspace.openTextDocument({
+			content: '{\n  // This is a comment\n  "name": "test"\n}',
+			language: 'jsonc'
+		});
+		await vscode.window.showTextDocument(doc);
+		
+		const range = new vscode.Range(2, 0, 2, 17);
+		const selRange = new vscode.Range(2, 2, 2, 8);
+		const item = new OutlineItem('name', 1, range, selRange);
+		
+		const controller = new TreeDragAndDropController();
+		const dataTransfer = new vscode.DataTransfer();
+		
+		await controller.handleDrag([item], dataTransfer, {} as any);
+		
+		// Verify data was added to DataTransfer
+		const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+		assert.ok(dragData, 'Drag data should be set for JSONC files');
+	});
+
+	test('Should reorder JSON properties using line-based approach', async () => {
+		const content = `{
+  "name": "test",
+  "version": "1.0.0",
+  "description": "A test package"
+}`;
+		
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'json'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+		
+		const controller = new TreeDragAndDropController();
+		
+		// Move "name" property (line 1) to after "description" (line 3)
+		// This simulates moving first property to last position
+		const success = await controller.moveSection(editor, 1, 4);
+		
+		assert.ok(success, 'Move operation should succeed');
+		
+		// Verify the property was moved
+		const newContent = editor.document.getText();
+		const lines = newContent.split('\n');
+		
+		// After move, "version" should be first property, "name" should be last
+		assert.ok(lines[1].includes('version'), 'version should be first property');
+		assert.ok(lines[3].includes('name'), 'name should be moved down');
+	});
+
+	test('Should handle multi-select drag for JSON properties', async () => {
+		const content = `{
+  "a": 1,
+  "b": 2,
+  "c": 3,
+  "d": 4
+}`;
+		
+		const doc = await vscode.workspace.openTextDocument({
+			content,
+			language: 'json'
+		});
+		const editor = await vscode.window.showTextDocument(doc);
+		
+		const controller = new TreeDragAndDropController();
+		
+		// Simulate dragging properties "a" and "c" to position after "d"
+		const draggedItems = [
+			{
+				label: 'a',
+				level: 1,
+				range: { start: { line: 1, character: 0 }, end: { line: 1, character: 8 } },
+				selectionRange: { start: { line: 1, character: 2 }, end: { line: 1, character: 5 } }
+			},
+			{
+				label: 'c',
+				level: 1,
+				range: { start: { line: 3, character: 0 }, end: { line: 3, character: 8 } },
+				selectionRange: { start: { line: 3, character: 2 }, end: { line: 3, character: 5 } }
+			}
+		];
+		
+		const success = await controller.moveSections(editor, draggedItems, 5);
+		
+		assert.ok(success, 'Multi-select move should succeed');
+		
+		// Verify properties were moved
+		const newContent = editor.document.getText();
+		assert.ok(newContent.includes('"b"'), 'Property b should remain');
+		assert.ok(newContent.includes('"d"'), 'Property d should remain');
+	});
+});

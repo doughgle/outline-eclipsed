@@ -1,0 +1,34 @@
+{
+  "name": "json-drag-test",
+  "version": "1.0.0",
+  "description": "Test file for JSON drag and drop functionality",
+  "main": "index.js",
+  "author": "Test Author",
+  "license": "MIT",
+  "keywords": [
+    "test",
+    "drag",
+    "drop"
+  ],
+  "scripts": {
+    "test": "echo \"Testing\"",
+    "build": "echo \"Building\""
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/json-drag-test.git"
+  },
+  "config": {
+    "port": 3000,
+    "timeout": 5000,
+    "retries": 3
+  }
+}
