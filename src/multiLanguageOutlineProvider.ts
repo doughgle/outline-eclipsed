@@ -3,6 +3,7 @@ import { OutlineProvider } from './outlineProvider';
 import { OutlineItem } from './outlineItem';
 import { MarkdownOutlineProvider } from './markdownOutlineProvider';
 import { GenericOutlineProvider } from './genericOutlineProvider';
+import { YamlOutlineProvider } from './yamlOutlineProvider';
 
 /**
  * Multi-language outline provider that delegates to language-specific providers.
@@ -20,6 +21,7 @@ export class MultiLanguageOutlineProvider extends OutlineProvider {
      */
     private static readonly CUSTOM_PROVIDERS: { [key: string]: () => OutlineProvider } = {
         'markdown': () => new MarkdownOutlineProvider(),
+        'yaml': () => new YamlOutlineProvider(),
     };
 
     constructor() {
