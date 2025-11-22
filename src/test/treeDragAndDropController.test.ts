@@ -767,4 +767,54 @@ await controller.handleDrag([item], dataTransfer, {} as any);
 const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
 assert.strictEqual(dragData, undefined, 'Should not support drag for Python');
 });
+
+test('Should move nested YAML child within parent', async () => {
+	const yamlContent = `beta:
+  child1: value1
+  child2: value2
+  child3:
+    grandchild: value3
+`;
+	const doc = await vscode.workspace.openTextDocument({
+		content: yamlContent,
+		language: 'yaml'
+	});
+	const editor = await vscode.window.showTextDocument(doc);
+
+	// child3 is at line 3, has range that includes grandchild (line 4)
+	const child3Range = new vscode.Range(3, 0, 4, 21);
+	const child3SelRange = new vscode.Range(3, 2, 3, 8);
+	const child3 = new OutlineItem('child3', 2, child3Range, child3SelRange);
+
+	// child1 is the target (drop before child1)
+	const child1Range = new vscode.Range(1, 0, 1, 18);
+	const child1SelRange = new vscode.Range(1, 2, 1, 8);
+	const child1 = new OutlineItem('child1', 2, child1Range, child1SelRange);
+
+	const controller = new TreeDragAndDropController();
+
+	// Serialize child3 for drag
+	const dataTransfer = new vscode.DataTransfer();
+	await controller.handleDrag([child3], dataTransfer, {} as any);
+
+	// Drop child3 before child1
+	await controller.handleDrop(child1, dataTransfer, {} as any);
+
+	// Verify the result
+	const text = editor.document.getText();
+	const lines = text.split('\n');
+	
+	console.log('=== After move ===');
+	console.log(text);
+	console.log('=== Lines ===');
+	lines.forEach((line, i) => console.log(`${i}: ${line}`));
+
+	// child3 should now be before child1
+	// Expected order: beta, child3, grandchild, blank, child1, child2
+	assert.ok(lines[1].includes('child3'), `child3 should be at line 1, but got: ${lines[1]}`);
+	assert.ok(lines[2].includes('grandchild'), `grandchild should move with child3, but got: ${lines[2]}`);
+	assert.ok(lines[4].includes('child1'), `child1 should be after child3 (after blank line), but got: ${lines[4]}`);
+	assert.ok(lines[5].includes('child2'), `child2 should remain at end, but got: ${lines[5]}`);
 });
+});
+
