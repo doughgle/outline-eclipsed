@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 import { OutlineItem } from './outlineItem';
+import { TextLineManipulator } from './textLineManipulator';
+import { OutlineItemProcessor } from './outlineItemProcessor';
+import { OutlineTransfer } from './outlineTransfer';
 
 /**
  * PI-3: TreeDragAndDropController
@@ -9,17 +12,38 @@ import { OutlineItem } from './outlineItem';
  */
 export class TreeDragAndDropController implements vscode.TreeDragAndDropController<OutlineItem> {
 	
-	dropMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
-	dragMimeTypes = ['application/vnd.code.tree.outlineeclipsed'];
+	dropMimeTypes: string[];
+	dragMimeTypes: string[];
 
 	private highlightDecorationType: vscode.TextEditorDecorationType;
 	private highlightTimeout: NodeJS.Timeout | undefined;
 	private provider: any; // OutlineProvider - using any to avoid circular import
 	private highlightDuration: number;
+	
+	// Collaborators for testability
+	private textManipulator: TextLineManipulator;
+	private itemProcessor: OutlineItemProcessor;
+	private transfer: OutlineTransfer;
 
-	constructor(provider?: any, highlightDuration: number = 1500) {
+	constructor(
+		provider?: any,
+		highlightDuration: number = 1500,
+		textManipulator?: TextLineManipulator,
+		itemProcessor?: OutlineItemProcessor,
+		transfer?: OutlineTransfer
+	) {
 		this.provider = provider;
 		this.highlightDuration = highlightDuration;
+		
+		// Initialize collaborators (allow injection for testing)
+		this.textManipulator = textManipulator || new TextLineManipulator();
+		this.itemProcessor = itemProcessor || new OutlineItemProcessor();
+		this.transfer = transfer || new OutlineTransfer();
+		
+		// Use MIME type from transfer object
+		this.dropMimeTypes = [this.transfer.mimeType];
+		this.dragMimeTypes = [this.transfer.mimeType];
+		
 		// PI-7: Enhanced "magnetic snap" highlight with prominent visual feedback
 		// - 2px solid border for better visibility
 		// - Configurable duration (default 1.5s) for quick, non-intrusive feedback
@@ -87,6 +111,45 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
+	 * Pure text manipulation logic for moving sections.
+	 * Delegates to TextLineManipulator for testability.
+	 * 
+	 * @param lines - Document content as array of lines
+	 * @param sectionsToMove - Sections to move with their ranges and labels
+	 * @param targetLine - Destination line number
+	 * @returns New document lines and the new ranges for highlighting
+	 */
+	private calculateMovedText(
+		lines: string[],
+		sectionsToMove: Array<{ range: vscode.Range; label: string }>,
+		targetLine: number
+	): { newLines: string[]; movedRanges: vscode.Range[] } {
+		return this.textManipulator.calculateMovedText(lines, sectionsToMove, targetLine);
+	}
+
+	/**
+	 * Serialize outline items to JSON for data transfer.
+	 * Delegates to OutlineTransfer for testability.
+	 * 
+	 * @param items - Array of outline items to serialize
+	 * @returns JSON string representation
+	 */
+	private serializeItems(items: OutlineItem[]): string {
+		return this.transfer.serialize(items);
+	}
+
+	/**
+	 * Deserialize JSON drag data to typed objects with ranges.
+	 * Delegates to OutlineTransfer for testability.
+	 * 
+	 * @param json - JSON string from data transfer
+	 * @returns Array of items with Range objects and metadata
+	 */
+	private deserializeItems(json: string): Array<{ range: vscode.Range; label: string; level: number }> {
+		return this.transfer.deserialize(json);
+	}
+
+	/**
 	 * PI-3/PI-4: Move a section from source line to target line
 	 * This is exposed as a command for testing and programmatic access
 	 */
@@ -106,32 +169,18 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 			console.log(`PI-4: Moving section from lines ${sourceItem.range.start.line}-${sourceItem.range.end.line} to line ${targetLine}`);
 
-			// PI-4: Simple approach - work with document as array of lines
+			// Convert to section format for calculateMovedText
+			const sectionsToMove = [{
+				range: sourceItem.range,
+				label: sourceItem.label
+			}];
+			
+			// Calculate new document content
 			const allLines = document.getText().split('\n');
-			
-			const sourceStart = sourceItem.range.start.line;
-			const sourceEnd = sourceItem.range.end.line;
-			let actualEnd = sourceEnd;
-			
-			if (actualEnd + 1 < allLines.length && allLines[actualEnd + 1].trim() === '') {
-				actualEnd++;
-			}
-			
-			const sectionLines = allLines.slice(sourceStart, actualEnd + 1);
-			
-			allLines.splice(sourceStart, actualEnd - sourceStart + 1);
-			
-			let insertPos = targetLine;
-			if (targetLine > sourceStart) {
-				insertPos = targetLine - (actualEnd - sourceStart + 1);
-			}
-			
-			insertPos = Math.max(0, Math.min(insertPos, allLines.length));
-			
-			allLines.splice(insertPos, 0, ...sectionLines);
+			const { newLines, movedRanges } = this.calculateMovedText(allLines, sectionsToMove, targetLine);
 			
 			// Replace entire document content
-			const newContent = allLines.join('\n');
+			const newContent = newLines.join('\n');
 			const fullRange = new vscode.Range(
 				document.lineAt(0).range.start,
 				document.lineAt(document.lineCount - 1).range.end
@@ -141,14 +190,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				editBuilder.replace(fullRange, newContent);
 			});
 
-			if (success) {
-				const newRange = new vscode.Range(
-					insertPos,
-					0,
-					insertPos + sectionLines.length - 1,
-					sectionLines[sectionLines.length - 1].length
-				);
-				this.highlightMovedText(editor, newRange);
+			if (success && movedRanges.length > 0) {
+				this.highlightMovedText(editor, movedRanges[0]);
 			}
 
 			console.log(`PI-4: Move operation ${success ? 'succeeded' : 'failed'}`);
@@ -165,13 +208,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	 * Sections are extracted in reverse order (bottom to top) to prevent line number shifts.
 	 * 
 	 * @param editor - Active text editor
-	 * @param draggedItems - Array of serialized items to move
+	 * @param draggedItems - Array of deserialized items with ranges
 	 * @param targetLine - Destination line number
 	 * @returns Promise that resolves to true if successful
 	 */
 	async moveSections(
 		editor: vscode.TextEditor,
-		draggedItems: any[],
+		draggedItems: Array<{ range: vscode.Range; label: string; level?: number }>,
 		targetLine: number
 	): Promise<boolean> {
 		try {
@@ -183,89 +226,20 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			const document = editor.document;
 			console.log(`PI-6: Moving ${draggedItems.length} sections to line ${targetLine}`);
 			
-			// PI-6: Use ranges directly from serialized data (works for all languages)
-			// Convert serialized items to outline items with proper ranges
-			const sourceItems: {start: number, end: number, label: string}[] = draggedItems.map(itemData => ({
-				start: itemData.range.start.line,
-				end: itemData.range.end.line,
-				label: itemData.label
+			// Items are already in correct format for calculateMovedText
+			const sectionsToMove = draggedItems.map(item => ({
+				range: item.range,
+				label: item.label
 			}));
 			
-			console.log(`PI-6: Source items: ${sourceItems.map(s => `${s.label}(${s.start}-${s.end})`).join(', ')}`);
+			console.log(`PI-6: Source items: ${sectionsToMove.map(s => `${s.label}(${s.range.start.line}-${s.range.end.line})`).join(', ')}`);
 			
-			// PI-6: Work with document as array of lines
+			// Calculate new document content
 			const allLines = document.getText().split('\n');
+			const { newLines, movedRanges } = this.calculateMovedText(allLines, sectionsToMove, targetLine);
 			
-			// Store sections and their metadata
-			interface SectionData {
-				lines: string[];
-				originalStart: number;
-				originalEnd: number;
-			}
-			const extractedSections: SectionData[] = [];
-			
-			// PI-6: Extract sections in reverse order (bottom to top) to avoid line shifts
-			const sortedItems = [...sourceItems].sort((a, b) => 
-				b.start - a.start
-			);
-			
-			for (const item of sortedItems) {
-				let sectionStart = item.start;
-				let sectionEnd = item.end;
-				
-				// Include trailing blank line if it exists
-				if (sectionEnd + 1 < allLines.length && allLines[sectionEnd + 1].trim() === '') {
-					sectionEnd++;
-				}
-				
-				console.log(`PI-6: Extracting ${item.label} from lines ${sectionStart}-${sectionEnd}`);
-				
-				// Extract the section
-				const sectionLines = allLines.slice(sectionStart, sectionEnd + 1);
-				extractedSections.unshift({ // Add to front to maintain document order
-					lines: sectionLines,
-					originalStart: sectionStart,
-					originalEnd: sectionEnd
-				});
-				
-				// Remove from document
-				allLines.splice(sectionStart, sectionEnd - sectionStart + 1);
-			}
-			
-			// PI-6: Calculate adjusted target position
-			// Account for lines removed before the target
-			let adjustedTarget = targetLine;
-			for (const section of extractedSections) {
-				if (section.originalStart < targetLine) {
-					const sectionLength = section.originalEnd - section.originalStart + 1;
-					adjustedTarget -= sectionLength;
-				}
-			}
-			
-			// Clamp to valid range
-			adjustedTarget = Math.max(0, Math.min(adjustedTarget, allLines.length));
-			
-			// PI-6: Insert all sections at target position in document order
-			let currentInsertPos = adjustedTarget;
-			const movedRanges: vscode.Range[] = [];
-			
-			for (const section of extractedSections) {
-				allLines.splice(currentInsertPos, 0, ...section.lines);
-				
-				// Track the new range for highlighting
-				const newRange = new vscode.Range(
-					currentInsertPos,
-					0,
-					currentInsertPos + section.lines.length - 1,
-					section.lines[section.lines.length - 1].length
-				);
-				movedRanges.push(newRange);
-				
-				currentInsertPos += section.lines.length;
-			}
-			
-			// PI-6: Replace document content
-			const newContent = allLines.join('\n');
+			// Replace document content
+			const newContent = newLines.join('\n');
 			const fullRange = new vscode.Range(
 				document.lineAt(0).range.start,
 				document.lineAt(document.lineCount - 1).range.end
@@ -276,9 +250,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			});
 
 			if (success) {
-				// PI-6: Highlight all moved sections
+				// Highlight all moved sections
 				this.highlightMovedSections(editor, movedRanges);
-				console.log(`PI-6: Successfully moved ${extractedSections.length} sections`);
+				console.log(`PI-6: Successfully moved ${sectionsToMove.length} sections`);
 			}
 
 			return success;
@@ -394,54 +368,24 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 	/**
 	 * PI-6: Remove items that are descendants of other selected items.
-	 * This prevents moving a section twice (once as parent, once as child).
-	 * An item is redundant if its range is contained within another item's range.
+	 * Delegates to OutlineItemProcessor for testability.
 	 * 
 	 * @param items - Array of selected outline items
 	 * @returns Filtered array with no redundant descendants
 	 */
 	private filterRedundantItems(items: readonly OutlineItem[]): OutlineItem[] {
-		if (items.length <= 1) {
-			return [...items];
-		}
-
-		const result: OutlineItem[] = [];
-		
-		for (const candidate of items) {
-			// Check if this candidate is contained within any other item
-			const isContainedInAnother = items.some(other => {
-				if (other === candidate) {
-					return false; // Don't compare item to itself
-				}
-				
-				// Check if candidate's range is fully contained within other's range
-				const candidateStart = candidate.range.start.line;
-				const candidateEnd = candidate.range.end.line;
-				const otherStart = other.range.start.line;
-				const otherEnd = other.range.end.line;
-				
-				return candidateStart >= otherStart && candidateEnd <= otherEnd;
-			});
-			
-			if (!isContainedInAnother) {
-				result.push(candidate);
-			}
-		}
-		
-		return result;
+		return this.itemProcessor.filterRedundantItems(items);
 	}
 
 	/**
 	 * PI-6: Sort items by their appearance in the document (top to bottom).
-	 * This ensures consistent ordering when moving multiple items.
+	 * Delegates to OutlineItemProcessor for testability.
 	 * 
 	 * @param items - Array of outline items
 	 * @returns Sorted array ordered by starting line number
 	 */
 	private sortItemsByPosition(items: OutlineItem[]): OutlineItem[] {
-		return [...items].sort((a, b) => {
-			return a.range.start.line - b.range.start.line;
-		});
+		return this.itemProcessor.sortItemsByPosition(items);
 	}
 
 	/**
@@ -466,23 +410,12 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		// PI-6: Sort items by their document position (top to bottom)
 		const sortedSource = this.sortItemsByPosition(filteredSource);
 		
-		// Serialize the outline items for transfer
-		const serialized = sortedSource.map(item => ({
-			label: item.label,
-			level: item.level,
-			range: {
-				start: { line: item.range.start.line, character: item.range.start.character },
-				end: { line: item.range.end.line, character: item.range.end.character }
-			},
-			selectionRange: {
-				start: { line: item.selectionRange.start.line, character: item.selectionRange.start.character },
-				end: { line: item.selectionRange.end.line, character: item.selectionRange.end.character }
-			}
-		}));
+		// Serialize and set drag data
+		const serialized = this.serializeItems(sortedSource);
 
 		dataTransfer.set(
-			'application/vnd.code.tree.outlineeclipsed',
-			new vscode.DataTransferItem(JSON.stringify(serialized))
+			this.transfer.mimeType,
+			new vscode.DataTransferItem(serialized)
 		);
 	}
 
@@ -502,14 +435,14 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		}
 		
 		// Get the drag data
-		const transferItem = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+		const transferItem = dataTransfer.get(this.transfer.mimeType);
 		if (!transferItem) {
 			console.log('PI-3: No drag data found');
 			return;
 		}
 
 		try {
-			const draggedItems = JSON.parse(transferItem.value as string);
+			const draggedItems = this.deserializeItems(transferItem.value as string);
 			console.log(`PI-3/PI-6: Drop operation - ${draggedItems.length} item(s) dropped`);
 			
 			if (draggedItems.length === 0) {
