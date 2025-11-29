@@ -14,7 +14,13 @@
   - Rich tooltips with symbol name, type, and line information
   - Works across all supported languages
 - 🔲 **PI-10**: show outline for markdown preview when focused
-- 🔲 **PI-11**: add addition symbols for markdown e.g. code blocks, quotes
+- ✅ **PI-11**: Additional markdown symbols (code blocks, quote blocks, images)
+  - Custom parser extends VS Code's built-in markdown support
+  - TDD approach with unit tests independent of VS Code API
+  - Fenced code blocks (``` and ~~~) with language labels
+  - Quote blocks (> lines, including multi-line)
+  - Images (![alt](url)) with alt text or filename labels
+  - Symbols nested under heading hierarchy
 - 🔲 **PI-12**: Configuration options
 - 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 
@@ -76,3 +82,15 @@
 - Consistent formatting across all supported languages
 - Markdown tooltips for better readability
 - Tested with Markdown, TypeScript, JavaScript, and Python
+
+### PI-11: Additional Markdown Symbols ✅
+- VS Code's built-in markdown extension only supports headings for outline
+- Custom standalone parser (`markdownParser.ts`) extends support to:
+  - **Fenced Code Blocks**: ``` and ~~~ syntax with language detection
+  - **Quote Blocks**: Lines starting with > (supports multi-line)
+  - **Images**: ![alt](url) syntax with alt text or filename labels
+- TDD approach with unit tests independent of VS Code API
+- Integration tests for VS Code API collaboration
+- Symbols nested under their parent headings in hierarchy
+- Level 7 for non-heading symbols (below H6 in hierarchy)
+- Tested with test-fixtures/PI-11-test.md
