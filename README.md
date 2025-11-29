@@ -44,7 +44,7 @@ Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
 
 ### Language Support
 
-- ✅ **Markdown** — H1–H6 headings with custom provider (full drag & drop)
+- ✅ **Markdown** — H1–H6 headings, code blocks, quote blocks, and images with custom provider (full drag & drop for headings)
 - ✅ **TypeScript/JavaScript** — Classes, functions, methods, properties (view-only outline; drag & drop disabled)
 - ✅ **Python** — Classes, functions, methods (view-only outline; drag & drop disabled)
 - ✅ **Java** — Classes, methods, fields (view-only outline; drag & drop disabled)
@@ -85,7 +85,7 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 - ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python) — drag & drop deferred
 - ✅ **PI-9**: Rich tree item descriptions and tooltips — line ranges and symbol information
 - 🔲 **PI-10**: Show outline for markdown preview when focused
-- 🔲 **PI-11**: Additional markdown symbols (code blocks, quotes)
+- ✅ **PI-11**: Additional markdown symbols (code blocks, quote blocks, images)
 - 🔲 **PI-12**: Configuration options
 - 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
 

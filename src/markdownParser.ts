@@ -31,7 +31,7 @@ export interface MarkdownSymbol {
     type: MarkdownSymbolType;
     /** Display label for the symbol */
     label: string;
-    /** Level in hierarchy (1-6 for headings, 1 for others) */
+    /** Level in hierarchy (1-6 for headings, 7 for other symbols) */
     level: number;
     /** Start line number (0-indexed) */
     startLine: number;
@@ -71,16 +71,20 @@ export function parseMarkdownSymbols(lines: string[]): MarkdownSymbol[] {
             const startChar = fenceMatch[1].length;
             
             // Find the closing fence
-            let endLine = i;
+            let endLine = -1; // -1 means no closing fence found
             for (let j = i + 1; j < lines.length; j++) {
                 if (lines[j].trim().startsWith(fence)) {
                     endLine = j;
                     break;
                 }
-                endLine = j; // If no closing fence, extend to current line
             }
             
-            // Only add if we found a proper closing fence
+            // If no closing fence found, extend to end of document
+            if (endLine === -1) {
+                endLine = lines.length - 1;
+            }
+            
+            // Only add if we have content (endLine > startLine)
             if (endLine > startLine) {
                 symbols.push({
                     type: MarkdownSymbolType.CodeBlock,
