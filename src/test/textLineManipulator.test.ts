@@ -9,6 +9,72 @@ suite('TextLineManipulator Unit Tests', () => {
 		manipulator = new TextLineManipulator();
 	});
 
+	test('determineExtractionBounds - include single trailing blank only', () => {
+		const lines = [
+			'# A',
+			'Content A',
+			'',
+			'',
+			'# B',
+			'Content B'
+		];
+		const range = new vscode.Range(0, 0, 1, 9);
+		const bounds = manipulator.determineExtractionBounds(lines, range);
+		assert.strictEqual(bounds.start, 0);
+		// Only the first trailing blank (line 2) is included; not line 3
+		assert.strictEqual(bounds.end, 2);
+		assert.strictEqual(bounds.hasLeadingBlank, false);
+		assert.strictEqual(bounds.hasTrailingBlank, true);
+	});
+
+	test('determineExtractionBounds - no trailing blank present', () => {
+		const lines = [
+			'# A',
+			'Content A',
+			'# B'
+		];
+		const range = new vscode.Range(0, 0, 1, 9);
+		const bounds = manipulator.determineExtractionBounds(lines, range);
+		assert.strictEqual(bounds.start, 0);
+		assert.strictEqual(bounds.end, 1);
+		assert.strictEqual(bounds.hasTrailingBlank, false);
+	});
+
+	test('determineExtractionBounds - leading blank detected but not included', () => {
+		const lines = [
+			'',
+			'# A',
+			'Content A',
+			'# B'
+		];
+		const range = new vscode.Range(1, 0, 2, 9);
+		const bounds = manipulator.determineExtractionBounds(lines, range);
+		assert.strictEqual(bounds.start, 1);
+		assert.strictEqual(bounds.end, 2);
+		assert.strictEqual(bounds.hasLeadingBlank, true);
+		assert.strictEqual(bounds.hasTrailingBlank, false);
+	});
+
+	test('determineExtractionBounds - boundaries at start/end of document', () => {
+		const lines = [
+			'# A',
+			'Content A',
+			'',
+			'# B',
+			'Content B',
+			''
+		];
+		// Start of doc
+		const boundsStart = manipulator.determineExtractionBounds(lines, new vscode.Range(0, 0, 1, 9));
+		assert.strictEqual(boundsStart.start, 0);
+		assert.strictEqual(boundsStart.hasLeadingBlank, false);
+		assert.strictEqual(boundsStart.end, 2);
+		// End near EOF: trailing blank exists but inclusion should only include immediate one
+		const boundsEnd = manipulator.determineExtractionBounds(lines, new vscode.Range(3, 0, 4, 9));
+		assert.strictEqual(boundsEnd.end, 5);
+		assert.strictEqual(boundsEnd.hasTrailingBlank, true);
+	});
+
 	test('Single section move - basic case', () => {
 		// GIVEN: Document with three sections
 		const lines = [
@@ -171,6 +237,62 @@ suite('TextLineManipulator Unit Tests', () => {
 		// THEN: Target should be adjusted for extraction
 		assert.strictEqual(newLines[0], '# Section 2');
 		assert.strictEqual(newLines[2], '# Section 1');
+	});
+
+	test('Preserve blank accumulation at insertion target', () => {
+		// GIVEN: Each section carries a trailing blank; moving multiple preserves accumulation
+		const lines = [
+			'# A', 'A1', '',
+			'# B', 'B1', '',
+			'# C', 'C1', ''
+		];
+		const sectionsToMove = [
+			{ range: new vscode.Range(0, 0, 2, 9), label: 'A' },
+			{ range: new vscode.Range(3, 0, 5, 9), label: 'B' }
+		];
+		const { newLines } = manipulator.calculateMovedText(lines, sectionsToMove, lines.length);
+		
+		// THEN: C remains first, then A block (with blank), then B block (with blank)
+		assert.strictEqual(newLines.length, 9, 'Should have 9 total lines');
+		assert.strictEqual(newLines[0], '# C');
+		assert.strictEqual(newLines[1], 'C1');
+		assert.strictEqual(newLines[2], '', 'C trailing blank preserved');
+		assert.strictEqual(newLines[3], '# A');
+		assert.strictEqual(newLines[4], 'A1');
+		assert.strictEqual(newLines[5], '', 'A trailing blank preserved');
+		assert.strictEqual(newLines[6], '# B');
+		assert.strictEqual(newLines[7], 'B1');
+		assert.strictEqual(newLines[8], '', 'B trailing blank preserved');
+	});
+
+	test('Sections without separators stay adjacent (no auto blank insertion)', () => {
+		const lines = [
+			'# A', 'A1',
+			'# B', 'B1'
+		];
+		const { newLines } = manipulator.calculateMovedText(lines, [{ range: new vscode.Range(0, 0, 1, 9), label: 'A' }], 4);
+		assert.deepStrictEqual(newLines, ['# B', 'B1', '# A', 'A1']);
+	});
+
+	test('Move to start does not add leading blank', () => {
+		const lines = [
+			'# B', 'B1', '',
+			'# A', 'A1', ''
+		];
+		const { newLines } = manipulator.calculateMovedText(lines, [{ range: new vscode.Range(3, 0, 4, 9), label: 'A' }], 0);
+		assert.strictEqual(newLines[0], '# A');
+		assert.strictEqual(newLines[2], ''); // trailing blank preserved
+	});
+
+	test('Move to end preserves existing EOF state (no normalization)', () => {
+		const lines = [
+			'# A', 'A1', '',
+			'# B', 'B1', '',
+			'' // extra EOF blank retained in base behavior
+		];
+		const { newLines } = manipulator.calculateMovedText(lines, [{ range: new vscode.Range(0, 0, 1, 9), label: 'A' }], lines.length);
+		// Expect single extra EOF blank still present (no MD047 enforcement here)
+		assert.strictEqual(newLines[newLines.length - 1], '');
 	});
 
 	test('Empty sections array returns unchanged document', () => {

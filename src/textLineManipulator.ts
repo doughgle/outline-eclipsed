@@ -9,6 +9,33 @@ import * as vscode from 'vscode';
  */
 export class TextLineManipulator {
 	/**
+	 * Determine the exact extraction bounds for a section prior to moving.
+	 * Default behavior preserves existing whitespace:
+	 * - Leading blank lines are NOT included.
+	 * - A single trailing blank line (immediately following section end) IS included.
+	 *
+	 * Returns metadata flags to aid unit testing and future specialization.
+	 */
+	determineExtractionBounds(
+		lines: string[],
+		range: vscode.Range
+	): { start: number; end: number; hasLeadingBlank: boolean; hasTrailingBlank: boolean } {
+		let start = range.start.line;
+		let end = range.end.line;
+
+		// Leading blank detection (not included by default)
+		const hasLeadingBlank = start - 1 >= 0 && lines[start - 1].trim() === '';
+
+		// Trailing blank inclusion: include only the first trailing blank line
+		let hasTrailingBlank = false;
+		if (end + 1 < lines.length && lines[end + 1].trim() === '') {
+			end++;
+			hasTrailingBlank = true;
+		}
+
+		return { start, end, hasLeadingBlank, hasTrailingBlank };
+	}
+	/**
 	 * Calculate new document content after moving sections.
 	 * Handles extraction, target adjustment, and insertion of multiple sections.
 	 * 
@@ -39,14 +66,9 @@ export class TextLineManipulator {
 		);
 		
 		for (const section of sortedSections) {
-			let sectionStart = section.range.start.line;
-			let sectionEnd = section.range.end.line;
-			
-			// Include trailing blank line if it exists
-			if (sectionEnd + 1 < allLines.length && allLines[sectionEnd + 1].trim() === '') {
-				sectionEnd++;
-			}
-			
+			const bounds = this.determineExtractionBounds(allLines, section.range);
+			const sectionStart = bounds.start;
+			const sectionEnd = bounds.end;
 			// Extract the section
 			const sectionLines = allLines.slice(sectionStart, sectionEnd + 1);
 			extractedSections.unshift({ // Add to front to maintain document order
