@@ -217,4 +217,66 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		assert.strictEqual(original.length, 2);
 		assert.strictEqual(result.length, 1);
 	});
+
+	test('filterRedundantItems - keeps items with identical ranges', () => {
+		// GIVEN: Two distinct items with exactly the same range
+		// This scenario can occur when YAML keys share the same line range
+		// Bug: The current implementation would filter out BOTH items because
+		// each is considered "contained" in the other due to equality
+		const itemA = new OutlineItem(
+			'Item A',
+			1,
+			new vscode.Range(0, 0, 5, 0),
+			new vscode.Range(0, 0, 0, 6)
+		);
+		const itemB = new OutlineItem(
+			'Item B',
+			1,
+			new vscode.Range(0, 0, 5, 0), // Same range as itemA
+			new vscode.Range(0, 0, 0, 6)
+		);
+
+		// WHEN: Filtering items with identical ranges
+		const result = processor.filterRedundantItems([itemA, itemB]);
+
+		// THEN: Both items should be kept - neither truly contains the other
+		// (they are distinct items that happen to share the same range)
+		assert.strictEqual(result.length, 2, 
+			'Items with identical ranges should both be kept');
+		assert.ok(result.includes(itemA), 'Item A should be in result');
+		assert.ok(result.includes(itemB), 'Item B should be in result');
+	});
+
+	test('filterRedundantItems - keeps single item from multiple items with identical ranges when one is truly nested', () => {
+		// GIVEN: Three items - two with identical ranges and one nested inside
+		const outer1 = new OutlineItem(
+			'Outer 1',
+			1,
+			new vscode.Range(0, 0, 10, 0),
+			new vscode.Range(0, 0, 0, 7)
+		);
+		const outer2 = new OutlineItem(
+			'Outer 2',
+			1,
+			new vscode.Range(0, 0, 10, 0), // Same range as outer1
+			new vscode.Range(0, 0, 0, 7)
+		);
+		const inner = new OutlineItem(
+			'Inner',
+			2,
+			new vscode.Range(2, 0, 5, 0), // Truly nested inside outer1/outer2
+			new vscode.Range(2, 0, 2, 5)
+		);
+
+		// WHEN: Filtering
+		const result = processor.filterRedundantItems([outer1, outer2, inner]);
+
+		// THEN: Both outer items kept (identical ranges, neither contains the other)
+		// Inner item filtered out (truly contained in both outers)
+		assert.strictEqual(result.length, 2, 
+			'Should keep both items with identical ranges, filter nested item');
+		assert.ok(result.includes(outer1), 'Outer 1 should be in result');
+		assert.ok(result.includes(outer2), 'Outer 2 should be in result');
+		assert.ok(!result.includes(inner), 'Inner item should be filtered out');
+	});
 });
