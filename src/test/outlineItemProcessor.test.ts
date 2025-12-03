@@ -218,11 +218,9 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		assert.strictEqual(result.length, 1);
 	});
 
-	test('filterRedundantItems - keeps items with identical ranges', () => {
+	test('filterRedundantItems - throws error for items with identical ranges (invariant violation)', () => {
 		// GIVEN: Two distinct items with exactly the same range
-		// This scenario can occur when YAML keys share the same line range
-		// Bug: The current implementation would filter out BOTH items because
-		// each is considered "contained" in the other due to equality
+		// This violates the invariant that each outline item should have a unique range
 		const itemA = new OutlineItem(
 			'Item A',
 			1,
@@ -232,23 +230,21 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		const itemB = new OutlineItem(
 			'Item B',
 			1,
-			new vscode.Range(0, 0, 5, 0), // Same range as itemA
+			new vscode.Range(0, 0, 5, 0), // Same range as itemA - invariant violation
 			new vscode.Range(0, 0, 0, 6)
 		);
 
-		// WHEN: Filtering items with identical ranges
-		const result = processor.filterRedundantItems([itemA, itemB]);
-
-		// THEN: Both items should be kept - neither truly contains the other
-		// (they are distinct items that happen to share the same range)
-		assert.strictEqual(result.length, 2, 
-			'Items with identical ranges should both be kept');
-		assert.ok(result.includes(itemA), 'Item A should be in result');
-		assert.ok(result.includes(itemB), 'Item B should be in result');
+		// WHEN/THEN: Filtering should throw an error for invariant violation
+		assert.throws(
+			() => processor.filterRedundantItems([itemA, itemB]),
+			/Invariant violation: Items "Item A" and "Item B" have identical ranges/,
+			'Should throw error when items have identical ranges'
+		);
 	});
 
-	test('filterRedundantItems - keeps single item from multiple items with identical ranges when one is truly nested', () => {
+	test('filterRedundantItems - throws error for identical ranges even with nested item', () => {
 		// GIVEN: Three items - two with identical ranges and one nested inside
+		// The identical ranges violate the invariant
 		const outer1 = new OutlineItem(
 			'Outer 1',
 			1,
@@ -258,25 +254,46 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		const outer2 = new OutlineItem(
 			'Outer 2',
 			1,
-			new vscode.Range(0, 0, 10, 0), // Same range as outer1
+			new vscode.Range(0, 0, 10, 0), // Same range as outer1 - invariant violation
 			new vscode.Range(0, 0, 0, 7)
 		);
 		const inner = new OutlineItem(
 			'Inner',
 			2,
-			new vscode.Range(2, 0, 5, 0), // Truly nested inside outer1/outer2
+			new vscode.Range(2, 0, 5, 0),
+			new vscode.Range(2, 0, 2, 5)
+		);
+
+		// WHEN/THEN: Filtering should throw an error for invariant violation
+		assert.throws(
+			() => processor.filterRedundantItems([outer1, outer2, inner]),
+			/Invariant violation/,
+			'Should throw error when items have identical ranges'
+		);
+	});
+
+	test('filterRedundantItems - handles strictly contained items correctly', () => {
+		// GIVEN: Parent contains child (proper containment, not identical ranges)
+		// This tests the fix for the original bug where >= and <= would
+		// incorrectly filter both items if ranges were identical
+		const parent = new OutlineItem(
+			'Parent',
+			1,
+			new vscode.Range(0, 0, 10, 0),  // Lines 0-10
+			new vscode.Range(0, 0, 0, 6)
+		);
+		const child = new OutlineItem(
+			'Child',
+			2,
+			new vscode.Range(2, 0, 8, 0),  // Lines 2-8 (strictly within 0-10)
 			new vscode.Range(2, 0, 2, 5)
 		);
 
 		// WHEN: Filtering
-		const result = processor.filterRedundantItems([outer1, outer2, inner]);
+		const result = processor.filterRedundantItems([parent, child]);
 
-		// THEN: Both outer items kept (identical ranges, neither contains the other)
-		// Inner item filtered out (truly contained in both outers)
-		assert.strictEqual(result.length, 2, 
-			'Should keep both items with identical ranges, filter nested item');
-		assert.ok(result.includes(outer1), 'Outer 1 should be in result');
-		assert.ok(result.includes(outer2), 'Outer 2 should be in result');
-		assert.ok(!result.includes(inner), 'Inner item should be filtered out');
+		// THEN: Child should be filtered out (it's strictly contained in parent)
+		assert.strictEqual(result.length, 1, 'Child should be filtered out');
+		assert.strictEqual(result[0], parent, 'Parent should remain');
 	});
 });
