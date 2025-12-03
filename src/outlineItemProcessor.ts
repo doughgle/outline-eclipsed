@@ -13,23 +13,13 @@ export class OutlineItemProcessor {
 	 * This prevents moving a section twice (once as parent, once as child).
 	 * An item is redundant if its range is strictly contained within another item's range.
 	 * 
-	 * Invariant: No two distinct items should have identical ranges, as each outline
-	 * item represents a unique document region. An error is thrown if this invariant
-	 * is violated.
-	 * 
 	 * @param items - Array of selected outline items
 	 * @returns Filtered array with no redundant descendants
-	 * @throws Error if duplicate items with identical ranges are detected (invariant violation)
 	 */
 	filterRedundantItems(items: readonly OutlineItem[]): OutlineItem[] {
 		if (items.length <= 1) {
 			return [...items];
 		}
-
-		// Assert invariant: no two distinct items should have identical ranges
-		// This is a programming error if it occurs, as the outline tree should
-		// never contain duplicate range items
-		this.assertNoIdenticalRanges(items);
 
 		const result: OutlineItem[] = [];
 		
@@ -54,32 +44,6 @@ export class OutlineItemProcessor {
 		}
 		
 		return result;
-	}
-
-	/**
-	 * Validates that no two distinct items have identical ranges.
-	 * This is an invariant: the outline tree should never contain items
-	 * with duplicate ranges, as each item represents a unique document region.
-	 * 
-	 * @param items - Array of outline items to validate
-	 * @throws Error if identical ranges are detected
-	 */
-	private assertNoIdenticalRanges(items: readonly OutlineItem[]): void {
-		for (let i = 0; i < items.length; i++) {
-			for (let j = i + 1; j < items.length; j++) {
-				const itemA = items[i];
-				const itemB = items[j];
-				
-				// Use Range.isEqual for precise comparison including character positions
-				if (itemA.range.isEqual(itemB.range)) {
-					throw new Error(
-						`Invariant violation: Items "${itemA.label}" and "${itemB.label}" ` +
-						`have identical ranges (lines ${itemA.range.start.line}-${itemA.range.end.line}). ` +
-						`Each outline item should represent a unique document region.`
-					);
-				}
-			}
-		}
 	}
 
 	/**

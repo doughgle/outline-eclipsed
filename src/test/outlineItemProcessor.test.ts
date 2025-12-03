@@ -218,9 +218,10 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		assert.strictEqual(result.length, 1);
 	});
 
-	test('filterRedundantItems - throws error for items with identical ranges (invariant violation)', () => {
+	test('filterRedundantItems - keeps items with identical ranges (no false positives)', () => {
 		// GIVEN: Two distinct items with exactly the same range
-		// This violates the invariant that each outline item should have a unique range
+		// This tests the fix for the original bug where >= and <= would
+		// incorrectly filter both items if ranges were identical
 		const itemA = new OutlineItem(
 			'Item A',
 			1,
@@ -230,52 +231,22 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		const itemB = new OutlineItem(
 			'Item B',
 			1,
-			new vscode.Range(0, 0, 5, 0), // Same range as itemA - invariant violation
+			new vscode.Range(0, 0, 5, 0), // Same range as itemA
 			new vscode.Range(0, 0, 0, 6)
 		);
 
-		// WHEN/THEN: Filtering should throw an error for invariant violation
-		assert.throws(
-			() => processor.filterRedundantItems([itemA, itemB]),
-			/Invariant violation: Items "Item A" and "Item B" have identical ranges/,
-			'Should throw error when items have identical ranges'
-		);
-	});
+		// WHEN: Filtering items with identical ranges
+		const result = processor.filterRedundantItems([itemA, itemB]);
 
-	test('filterRedundantItems - throws error for identical ranges even with nested item', () => {
-		// GIVEN: Three items - two with identical ranges and one nested inside
-		// The identical ranges violate the invariant
-		const outer1 = new OutlineItem(
-			'Outer 1',
-			1,
-			new vscode.Range(0, 0, 10, 0),
-			new vscode.Range(0, 0, 0, 7)
-		);
-		const outer2 = new OutlineItem(
-			'Outer 2',
-			1,
-			new vscode.Range(0, 0, 10, 0), // Same range as outer1 - invariant violation
-			new vscode.Range(0, 0, 0, 7)
-		);
-		const inner = new OutlineItem(
-			'Inner',
-			2,
-			new vscode.Range(2, 0, 5, 0),
-			new vscode.Range(2, 0, 2, 5)
-		);
-
-		// WHEN/THEN: Filtering should throw an error for invariant violation
-		assert.throws(
-			() => processor.filterRedundantItems([outer1, outer2, inner]),
-			/Invariant violation/,
-			'Should throw error when items have identical ranges'
-		);
+		// THEN: Both items should be kept since neither strictly contains the other
+		// (identical ranges means neither is a proper subset of the other)
+		assert.strictEqual(result.length, 2, 'Both items should be kept');
+		assert.ok(result.includes(itemA), 'Item A should be in result');
+		assert.ok(result.includes(itemB), 'Item B should be in result');
 	});
 
 	test('filterRedundantItems - handles strictly contained items correctly', () => {
 		// GIVEN: Parent contains child (proper containment, not identical ranges)
-		// This tests the fix for the original bug where >= and <= would
-		// incorrectly filter both items if ranges were identical
 		const parent = new OutlineItem(
 			'Parent',
 			1,
