@@ -11,7 +11,7 @@ export class OutlineItemProcessor {
 	/**
 	 * Remove items that are descendants of other selected items.
 	 * This prevents moving a section twice (once as parent, once as child).
-	 * An item is redundant if its range is contained within another item's range.
+	 * An item is redundant if its range is strictly contained within another item's range.
 	 * 
 	 * @param items - Array of selected outline items
 	 * @returns Filtered array with no redundant descendants
@@ -30,13 +30,12 @@ export class OutlineItemProcessor {
 					return false; // Don't compare item to itself
 				}
 				
-				// Check if candidate's range is fully contained within other's range
-				const candidateStart = candidate.range.start.line;
-				const candidateEnd = candidate.range.end.line;
-				const otherStart = other.range.start.line;
-				const otherEnd = other.range.end.line;
-				
-				return candidateStart >= otherStart && candidateEnd <= otherEnd;
+				// Check if candidate's range is strictly contained within other's range
+				// Using VS Code Range methods for precise position matching
+				// For true containment, the candidate must be smaller than the other
+				// (not just equal to it)
+				return other.range.contains(candidate.range) && 
+					!other.range.isEqual(candidate.range);
 			});
 			
 			if (!isContainedInAnother) {

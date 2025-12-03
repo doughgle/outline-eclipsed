@@ -217,4 +217,54 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		assert.strictEqual(original.length, 2);
 		assert.strictEqual(result.length, 1);
 	});
+
+	test('filterRedundantItems - keeps items with identical ranges (no false positives)', () => {
+		// GIVEN: Two distinct items with exactly the same range
+		// This tests the fix for the original bug where >= and <= would
+		// incorrectly filter both items if ranges were identical
+		const itemA = new OutlineItem(
+			'Item A',
+			1,
+			new vscode.Range(0, 0, 5, 0),
+			new vscode.Range(0, 0, 0, 6)
+		);
+		const itemB = new OutlineItem(
+			'Item B',
+			1,
+			new vscode.Range(0, 0, 5, 0), // Same range as itemA
+			new vscode.Range(0, 0, 0, 6)
+		);
+
+		// WHEN: Filtering items with identical ranges
+		const result = processor.filterRedundantItems([itemA, itemB]);
+
+		// THEN: Both items should be kept since neither strictly contains the other
+		// (identical ranges means neither is a proper subset of the other)
+		assert.strictEqual(result.length, 2, 'Both items should be kept');
+		assert.ok(result.includes(itemA), 'Item A should be in result');
+		assert.ok(result.includes(itemB), 'Item B should be in result');
+	});
+
+	test('filterRedundantItems - handles strictly contained items correctly', () => {
+		// GIVEN: Parent contains child (proper containment, not identical ranges)
+		const parent = new OutlineItem(
+			'Parent',
+			1,
+			new vscode.Range(0, 0, 10, 0),  // Lines 0-10
+			new vscode.Range(0, 0, 0, 6)
+		);
+		const child = new OutlineItem(
+			'Child',
+			2,
+			new vscode.Range(2, 0, 8, 0),  // Lines 2-8 (strictly within 0-10)
+			new vscode.Range(2, 0, 2, 5)
+		);
+
+		// WHEN: Filtering
+		const result = processor.filterRedundantItems([parent, child]);
+
+		// THEN: Child should be filtered out (it's strictly contained in parent)
+		assert.strictEqual(result.length, 1, 'Child should be filtered out');
+		assert.strictEqual(result[0], parent, 'Parent should remain');
+	});
 });
