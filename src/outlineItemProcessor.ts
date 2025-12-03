@@ -13,9 +13,9 @@ export class OutlineItemProcessor {
 	 * This prevents moving a section twice (once as parent, once as child).
 	 * An item is redundant if its range is strictly contained within another item's range.
 	 * 
-	 * Note: Items with identical ranges are both kept, as they are distinct items
-	 * that happen to share the same range boundaries. True containment requires
-	 * that one range is strictly smaller than the other.
+	 * Invariant: No two distinct items should have identical ranges, as each outline
+	 * item represents a unique document region. An error is thrown if this invariant
+	 * is violated.
 	 * 
 	 * @param items - Array of selected outline items
 	 * @returns Filtered array with no redundant descendants
@@ -41,16 +41,11 @@ export class OutlineItemProcessor {
 				}
 				
 				// Check if candidate's range is strictly contained within other's range
+				// Using VS Code Range methods for precise position matching
 				// For true containment, the candidate must be smaller than the other
 				// (not just equal to it)
-				const candidateStart = candidate.range.start.line;
-				const candidateEnd = candidate.range.end.line;
-				const otherStart = other.range.start.line;
-				const otherEnd = other.range.end.line;
-				
-				// Strictly contained: candidate is within other AND smaller
-				return candidateStart >= otherStart && candidateEnd <= otherEnd
-					&& (candidateStart > otherStart || candidateEnd < otherEnd);
+				return other.range.contains(candidate.range) && 
+					!other.range.isEqual(candidate.range);
 			});
 			
 			if (!isContainedInAnother) {
@@ -75,8 +70,8 @@ export class OutlineItemProcessor {
 				const itemA = items[i];
 				const itemB = items[j];
 				
-				if (itemA.range.start.line === itemB.range.start.line &&
-					itemA.range.end.line === itemB.range.end.line) {
+				// Use Range.isEqual for precise comparison including character positions
+				if (itemA.range.isEqual(itemB.range)) {
 					throw new Error(
 						`Invariant violation: Items "${itemA.label}" and "${itemB.label}" ` +
 						`have identical ranges (lines ${itemA.range.start.line}-${itemA.range.end.line}). ` +
