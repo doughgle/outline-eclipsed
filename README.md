@@ -24,6 +24,7 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 - **Rich Information Display**: Tree items show values for constants and data keys, with detailed tooltips including symbol type and line information.
 - **Multi-Language Support**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop enabled for Markdown and YAML.
 - **Graceful Language Server Activation**: Outline auto-refreshes when symbols become available; shows a short status message if symbols aren't ready yet.
+- **Read-Only File Protection**: Drag & drop disabled on read-only files (e.g., viewing git commit history). Shows clear warning with lock icon when file cannot be edited.
 
 ### Installation
 
@@ -85,10 +86,11 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 - ✅ **PI-0–7**: Markdown outline, nested drag & drop, multi-select, enhanced highlights
 - ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python) — drag & drop deferred
 - ✅ **PI-9**: Rich tree item descriptions and tooltips — line ranges and symbol information
-- 🔲 **PI-10**: Show outline for markdown preview when focused
-- 🔲 **PI-11**: Additional markdown symbols (code blocks, quotes)
+- ✅ **PI-10**: Read-only file protection — drag and drop disabled on git history files and other read-only documents
+- 🔲 **PI-11**: Enable drag & drop for additional languages; advanced customization
 - 🔲 **PI-12**: Configuration options
-- 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
+- 🔲 **PI-13**: Show outline for markdown preview when focused
+- 🔲 **PI-14**: Additional markdown symbols (code blocks, quotes)
 
 ### License
 

@@ -59,6 +59,34 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
+	 * Check if a document can be edited (not read-only).
+	 * @param document - Document to check
+	 * @returns true if writable, false if read-only
+	 */
+	private async isDocumentWritable(document: vscode.TextDocument): Promise<boolean> {
+		// Check if the file system scheme supports writing
+		const isWritableFS = vscode.workspace.fs.isWritableFileSystem(document.uri.scheme);
+		if (isWritableFS === false) {
+			return false;
+		}
+		
+		// For file:// scheme, check file permissions
+		if (document.uri.scheme === 'file') {
+			try {
+				const stat = await vscode.workspace.fs.stat(document.uri);
+				if (stat.permissions !== undefined && (stat.permissions & vscode.FilePermission.Readonly)) {
+					return false;
+				}
+			} catch (error) {
+				// If we can't stat the file, assume it might be writable
+				// (e.g., untitled documents don't have a file yet)
+			}
+		}
+		
+		return true;
+	}
+
+	/**
 	 * PI-5: Clean up resources
 	 */
 	dispose(): void {
@@ -431,6 +459,15 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		const editor = vscode.window.activeTextEditor;
 		if (!editor || !['markdown', 'yaml'].includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+			return;
+		}
+		
+		// Check if the document is read-only
+		const isWritable = await this.isDocumentWritable(editor.document);
+		if (!isWritable) {
+			vscode.window.showWarningMessage(
+				'Cannot move sections: This file is read-only. Please make the file writable to enable drag and drop.'
+			);
 			return;
 		}
 		

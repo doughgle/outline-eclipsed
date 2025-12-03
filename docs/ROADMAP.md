@@ -13,10 +13,14 @@
   - Line range descriptions (e.g., "L6-L11")
   - Rich tooltips with symbol name, type, and line information
   - Works across all supported languages
-- 🔲 **PI-10**: show outline for markdown preview when focused
-- 🔲 **PI-11**: add addition symbols for markdown e.g. code blocks, quotes
+- ✅ **PI-10**: Fix read-only file drag & drop bug
+  - Prevent confusing highlights when attempting drag & drop on read-only files
+  - Add visual warning in tree view with lock icon when file is read-only
+  - Show clear error message when drop is attempted on read-only file
+- 🔲 **PI-11**: Enable drag & drop for additional languages; advanced customization
 - 🔲 **PI-12**: Configuration options
-- 🔲 **Future**: Enable drag & drop for additional languages; advanced customization
+- 🔲 **PI-13**: show outline for markdown preview when focused
+- 🔲 **PI-14**: add addition symbols for markdown e.g. code blocks, quotes
 
 ### PI-0: Extension Skeleton ✅
 
@@ -76,3 +80,7 @@
 - Consistent formatting across all supported languages
 - Markdown tooltips for better readability
 - Tested with Markdown, TypeScript, JavaScript, and Python
+
+### PI-10: Read-Only File Protection ✅
+- Disable drag and drop on read-only files
+- User-friendly error message when drop is attempted

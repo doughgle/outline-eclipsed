@@ -15,6 +15,34 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
 
     protected items: OutlineItem[] = [];
     protected currentDocument: vscode.TextDocument | undefined;
+    protected isReadOnly: boolean = false;
+
+    /**
+     * Check if a document is read-only.
+     * @param document - Document to check
+     * @returns Promise resolving to true if read-only
+     */
+    protected async checkIfReadOnly(document: vscode.TextDocument): Promise<boolean> {
+        // Check if the file system scheme supports writing
+        const isWritableFS = vscode.workspace.fs.isWritableFileSystem(document.uri.scheme);
+        if (isWritableFS === false) {
+            return true;
+        }
+        
+        // For file:// scheme, check file permissions
+        if (document.uri.scheme === 'file') {
+            try {
+                const stat = await vscode.workspace.fs.stat(document.uri);
+                if (stat.permissions !== undefined && (stat.permissions & vscode.FilePermission.Readonly)) {
+                    return true;
+                }
+            } catch (error) {
+                // If we can't stat the file, assume it's writable
+            }
+        }
+        
+        return false;
+    }
 
     /**
      * PI-6: Getter for root items (excludes placeholders).
@@ -33,10 +61,12 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     async refresh(document?: vscode.TextDocument): Promise<void> {
         if (document) {
             this.currentDocument = document;
+            this.isReadOnly = await this.checkIfReadOnly(document);
             this.items = await this.parseDocument(document);
         } else {
             // Clear the tree when no document provided
             this.currentDocument = undefined;
+            this.isReadOnly = false;
             this.items = [];
         }
         this._onDidChangeTreeData.fire();
@@ -66,6 +96,7 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
     /**
      * Required by TreeDataProvider - returns children for given element.
      * PI-6: Adds 2 placeholder items at end of root items for easy end-of-document drops.
+     * Adds read-only warning item at the top when file is read-only.
      */
     getChildren(element?: OutlineItem): Thenable<OutlineItem[]> {
         if (!this.currentDocument) {
@@ -75,10 +106,61 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         if (element) {
             return Promise.resolve(element.children);
         } else {
+            const result: OutlineItem[] = [];
+            
+            // Add read-only warning item at the top if file is read-only
+            if (this.isReadOnly) {
+                result.push(this.createReadOnlyWarningItem());
+            }
+            
+            // Add regular items
+            result.push(...this.items);
+            
             // PI-6: Add 1 placeholder item at end for drop zone
             const placeholders = this.createPlaceholders();
-            return Promise.resolve([...this.items, ...placeholders]);
+            result.push(...placeholders);
+            
+            return Promise.resolve(result);
         }
+    }
+
+    /**
+     * Creates a warning item to display when file is read-only.
+     * Shows at the top of the tree with a clear icon and message.
+     * 
+     * @returns Warning item for read-only status
+     */
+    private createReadOnlyWarningItem(): OutlineItem {
+        const range = new vscode.Range(0, 0, 0, 0);
+        
+        const warningItem = new OutlineItem(
+            'File is Read-Only',
+            0,
+            range,
+            range,
+            [],
+            vscode.SymbolKind.Null
+        );
+        
+        // Use a warning/lock icon
+        warningItem.iconPath = new vscode.ThemeIcon('lock', new vscode.ThemeColor('problemsWarningIcon.foreground'));
+        
+        // Override description and tooltip
+        warningItem.description = 'Drag & drop disabled';
+        const tooltip = new vscode.MarkdownString();
+        tooltip.appendMarkdown('$(warning) **This file is read-only**\n\n');
+        tooltip.appendMarkdown('Drag and drop operations are disabled.\n\n');
+        tooltip.appendMarkdown('Make the file writable to enable editing.');
+        warningItem.tooltip = tooltip;
+        
+        // Remove command so clicking doesn't navigate
+        warningItem.command = undefined;
+        
+        // Mark as warning for identification
+        (warningItem as any).isReadOnlyWarning = true;
+        warningItem.contextValue = 'readOnlyWarning';
+        
+        return warningItem;
     }
 
     /**
