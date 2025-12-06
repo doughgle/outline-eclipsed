@@ -18,10 +18,17 @@
   - Add visual warning in tree view with lock icon when file is read-only
   - Show clear error message when drop is attempted on read-only file
 - ✅ **PI-11**: Enable drag & drop for built-in data/markup/declarative formats (JSON, XML, HTML, CSS, INI)
-- 🔲 **PI-12**: Configuration options
-- 🔲 **PI-13**: show outline for markdown preview when focused
-- 🔲 **PI-14**: add addition symbols for markdown e.g. code blocks, quotes
-
+- 🔲 **PI-12**: enable shortcuts to move items up/down
+- 🔲 **PI-13** enable expand all nodes
+- 🔲 **PI-14** delete section from outline tree view
+- 🔲 **PI-15**: Configuration options
+  - config option to drag comments immediately before/after together with chosen symbol item (apply to chosen file extensions). before and after are independent options.
+  - config option to drag blank lines immediately before/after together with chosen symbol item (apply to chosen file extensions). before and after are independent options.
+  - config option to keep comments/blank lines together with destination items. when dropping (e.g., if dropping between two items that each have comments/blank lines before them, keep those together with the dropped item) 
+- 🔲 **PI-16**: show outline for markdown preview when focused
+- 🔲 **PI-17**: add addition symbols for markdown e.g. code blocks, quotes
+- 🔲 **PI-18**: copy selected markdown headings from outline (currently only copies first item)
+ 
 ### PI-0: Extension Skeleton ✅
 
 ### PI-1: Basic TreeView ✅
