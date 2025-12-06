@@ -1,0 +1,84 @@
+/* Base Styles */
+:root {
+    --primary-color: #007acc;
+    --secondary-color: #1e1e1e;
+    --text-color: #cccccc;
+    --font-family: 'Segoe UI', sans-serif;
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Typography */
+body {
+    font-family: var(--font-family);
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+    line-height: 1.6;
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Header */
+footer {
+    background-color: #111;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+.navigation {
+    display: flex;
+    gap: 1rem;
+}
+
+.navigation a {
+    color: white;
+    text-decoration: none;
+}
+
+/* Main Content */
+main {
+    padding: 2rem 0;
+}
+
+section {
+    margin-bottom: 2rem;
+}
+
+/* Footer */
+/* Utilities */
+.hidden {
+    display: none;
+}
+
+.flex {
+    display: flex;
+}
+
+.grid {
+    display: grid;
+}
+
+header {
+    background-color: var(--primary-color);
+    padding: 1rem 0;
+}

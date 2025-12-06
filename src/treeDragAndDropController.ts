@@ -5,6 +5,27 @@ import { OutlineItemProcessor } from './outlineItemProcessor';
 import { OutlineTransfer } from './outlineTransfer';
 
 /**
+ * PI-11: Languages that support drag & drop reordering.
+ * 
+ * These formats have document symbol providers (built-in or via extensions)
+ * that enable outline-based navigation and section reordering.
+ * 
+ * Built-in VS Code support: json, jsonc, html, css, scss, less
+ * Extension required: yaml (Red Hat YAML), xml (Red Hat XML)
+ */
+export const DRAG_DROP_SUPPORTED_LANGUAGES = [
+	'markdown',
+	'yaml',
+	'json',
+	'jsonc',
+	'html',
+	'css',
+	'scss',
+	'less',
+	'xml',
+];
+
+/**
  * PI-3: TreeDragAndDropController
  * 
  * Handles drag and drop operations for the outline tree view.
@@ -425,9 +446,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drag for markdown and yaml files to prevent data loss
+		// Only allow drag for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || !['markdown', 'yaml'].includes(editor.document.languageId)) {
+		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}
@@ -455,9 +476,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		dataTransfer: vscode.DataTransfer,
 		token: vscode.CancellationToken
 	): Promise<void> {
-		// Only allow drop for markdown and yaml files to prevent data loss
+		// Only allow drop for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || !['markdown', 'yaml'].includes(editor.document.languageId)) {
+		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
 			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
 			return;
 		}

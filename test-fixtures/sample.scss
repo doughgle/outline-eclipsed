@@ -1,0 +1,106 @@
+// Outline Eclipsed SCSS Sample
+// Demonstrates nested rules, variables, and mixins
+
+// Variables
+$border-radius: 4px;
+
+$primary-color: #007acc;
+$secondary-color: #1e1e1e;
+$text-color: #cccccc;
+$font-family: 'Segoe UI', sans-serif;
+// Mixins
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@mixin button-style($bg-color) {
+    background-color: $bg-color;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: $border-radius;
+    cursor: pointer;
+
+    &:hover {
+        background-color: darken($bg-color, 10%);
+    }
+}
+
+// Base Styles
+body {
+    font-family: $font-family;
+    color: $text-color;
+    background-color: $secondary-color;
+    line-height: 1.6;
+}
+
+// Header Component
+.btn {
+    @include button-style($primary-color);
+
+    &--secondary {
+        @include button-style($secondary-color);
+    }
+
+    &--large {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+    }
+}
+
+.header {
+    background-color: $primary-color;
+    padding: 1rem;
+
+    .logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .navigation {
+        display: flex;
+        gap: 1rem;
+
+        a {
+            color: white;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+// Main Content
+.main {
+    padding: 2rem;
+
+    .section {
+        margin-bottom: 2rem;
+
+        h2 {
+            color: $primary-color;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 0.5rem;
+        }
+    }
+}
+
+// Button Variants
+// Footer
+.footer {
+    background-color: darken($secondary-color, 5%);
+    padding: 1rem;
+    text-align: center;
+
+    .copyright {
+        font-size: 0.875rem;
+        opacity: 0.8;
+    }
+}

@@ -17,7 +17,7 @@
   - Prevent confusing highlights when attempting drag & drop on read-only files
   - Add visual warning in tree view with lock icon when file is read-only
   - Show clear error message when drop is attempted on read-only file
-- 🔲 **PI-11**: Enable drag & drop for additional languages; advanced customization
+- ✅ **PI-11**: Enable drag & drop for built-in data/markup/declarative formats (JSON, XML, HTML, CSS, INI)
 - 🔲 **PI-12**: Configuration options
 - 🔲 **PI-13**: show outline for markdown preview when focused
 - 🔲 **PI-14**: add addition symbols for markdown e.g. code blocks, quotes

@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { TreeDragAndDropController } from '../treeDragAndDropController';
+import { TreeDragAndDropController, DRAG_DROP_SUPPORTED_LANGUAGES } from '../treeDragAndDropController';
 import { OutlineItem } from '../outlineItem';
 
 suite('PI-3: TreeDragAndDropController Tests', () => {
@@ -917,4 +917,102 @@ test('PI-10: isDocumentWritable integration - detects git scheme as read-only', 
 });
 });
 
+suite('PI-11: Data/Markup Format Drag and Drop Tests', () => {
+
+	// Unit tests for DRAG_DROP_SUPPORTED_LANGUAGES constant
+	test('DRAG_DROP_SUPPORTED_LANGUAGES includes all expected data/markup formats', () => {
+		// GIVEN: The expected list of supported languages
+		const expectedLanguages = [
+			'markdown',
+			'yaml',
+			'json',
+			'jsonc',
+			'html',
+			'css',
+			'scss',
+			'less',
+			'xml',
+		];
+
+		// THEN: All expected languages should be in the constant
+		for (const lang of expectedLanguages) {
+			assert.ok(
+				DRAG_DROP_SUPPORTED_LANGUAGES.includes(lang),
+				`${lang} should be in DRAG_DROP_SUPPORTED_LANGUAGES`
+			);
+		}
+	});
+
+	test('DRAG_DROP_SUPPORTED_LANGUAGES does not include programming languages', () => {
+		// GIVEN: Languages that should NOT support drag & drop
+		const unsupportedLanguages = [
+			'typescript',
+			'javascript',
+			'python',
+			'java',
+			'cpp',
+			'c',
+			'csharp',
+			'go',
+			'rust',
+		];
+
+		// THEN: None of these should be in the constant
+		for (const lang of unsupportedLanguages) {
+			assert.ok(
+				!DRAG_DROP_SUPPORTED_LANGUAGES.includes(lang),
+				`${lang} should NOT be in DRAG_DROP_SUPPORTED_LANGUAGES`
+			);
+		}
+	});
+
+	// Integration test: One supported language (JSON) to verify end-to-end
+	test('Should allow drag for supported language (JSON)', async () => {
+		const jsonContent = `{
+  "name": "test",
+  "version": "1.0.0"
+}`;
+		const doc = await vscode.workspace.openTextDocument({
+			content: jsonContent,
+			language: 'json'
+		});
+		await vscode.window.showTextDocument(doc);
+
+		const range = new vscode.Range(1, 0, 1, 15);
+		const selRange = new vscode.Range(1, 2, 1, 8);
+		const item = new OutlineItem('name', 1, range, selRange);
+
+		const controller = new TreeDragAndDropController();
+		const dataTransfer = new vscode.DataTransfer();
+
+		await controller.handleDrag([item], dataTransfer, {} as any);
+
+		const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+		assert.ok(dragData, 'Drag data should be set for JSON');
+	});
+
+	// Integration test: One unsupported language to verify rejection
+	test('Should NOT allow drag for unsupported languages', async () => {
+		const javaContent = `public class Test {
+    public void hello() {}
+}`;
+		const doc = await vscode.workspace.openTextDocument({
+			content: javaContent,
+			language: 'java'
+		});
+		await vscode.window.showTextDocument(doc);
+
+		const range = new vscode.Range(0, 0, 2, 1);
+		const selRange = new vscode.Range(0, 0, 0, 16);
+		const item = new OutlineItem('Test', 1, range, selRange);
+
+		const controller = new TreeDragAndDropController();
+		const dataTransfer = new vscode.DataTransfer();
+
+		await controller.handleDrag([item], dataTransfer, {} as any);
+
+		const dragData = dataTransfer.get('application/vnd.code.tree.outlineeclipsed');
+		assert.strictEqual(dragData, undefined, 'Drag data should NOT be set for unsupported languages');
+	});
+});
 

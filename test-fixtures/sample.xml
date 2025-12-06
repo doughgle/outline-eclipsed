@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Outline Eclipsed Sample XML -->
+<project name="outline-eclipsed" version="0.5.0">
+    <metadata>
+        <author>Douglas Hellinger</author>
+        <description>VS Code extension for outline navigation</description>
+        <license>MIT</license>
+        <repository>https://github.com/doughgle/outline-eclipsed</repository>
+    </metadata>
+
+    <configuration>
+        <option name="highlightDuration" type="number" default="1500" />
+        <option name="enableDragDrop" type="boolean" default="true" />
+        <option name="showLineNumbers" type="boolean" default="false" />
+    </configuration>
+    <dependencies>
+        <dependency name="vscode" version="^1.74.0" type="engine" />
+        <dependency name="typescript" version="^5.0.0" type="dev" />
+        <dependency name="esbuild" version="^0.19.0" type="dev" />
+    </dependencies>
+
+    <features>
+        <feature id="outline-view">
+            <name>Hierarchical Outline</name>
+            <description>Tree view showing document structure</description>
+        </feature>
+        <feature id="drag-drop">
+            <name>Drag and Drop</name>
+            <description>Reorder sections by dragging</description>
+        </feature>
+        <feature id="multi-language">
+            <name>Multi-Language Support</name>
+            <description>Works with Markdown, TypeScript, Python, and more</description>
+        </feature>
+    </features>
+
+</project>

@@ -16,13 +16,13 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 ### Features
 
-- **Drag & Drop Reordering**: Drag symbols to reorder sections in Markdown and YAML files. Nested items move with their parent automatically.
+- **Drag & Drop Reordering**: Drag symbols to reorder sections in Markdown, YAML, JSON, HTML, CSS, and XML files. Nested items move with their parent automatically.
 - **Bidirectional Sync**: Click a symbol to jump to that location. Move your cursor, and the tree highlights the current symbol.
 - **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
 - **Real-Time Updates**: The tree refreshes automatically as you edit the document.
 - **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
 - **Rich Information Display**: Tree items show values for constants and data keys, with detailed tooltips including symbol type and line information.
-- **Multi-Language Support**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop enabled for Markdown and YAML.
+- **Multi-Language Support**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop enabled for data/markup formats.
 - **Graceful Language Server Activation**: Outline auto-refreshes when symbols become available; shows a short status message if symbols aren't ready yet.
 - **Read-Only File Protection**: Drag & drop disabled on read-only files (e.g., viewing git commit history). Shows clear warning with lock icon when file cannot be edited.
 
@@ -45,12 +45,25 @@ Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
 
 ### Language Support
 
-- ✅ **Markdown** — H1–H6 headings with custom provider (full drag & drop)
-- ✅ **YAML** — Keys and nested structures with custom provider (full drag & drop)
-- ✅ **TypeScript/JavaScript** — Classes, functions, methods, properties (view-only outline; drag & drop disabled)
-- ✅ **Python** — Classes, functions, methods (view-only outline; drag & drop disabled)
-- ✅ **Java** — Classes, methods, fields (view-only outline; drag & drop disabled)
-- ✅ **C/C++** — Classes, functions, structs (view-only outline; drag & drop disabled)
+#### Drag & Drop Enabled
+
+| Format | Language IDs | Extension Required |
+|--------|-------------|-------------------|
+| Markdown | `markdown` | None |
+| YAML | `yaml` | [Red Hat YAML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) |
+| JSON | `json`, `jsonc` | None |
+| HTML | `html` | None |
+| CSS | `css`, `scss`, `less` | None |
+| XML | `xml` | [Red Hat XML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml) |
+
+#### View-Only Outline
+
+These languages show an outline for navigation, but drag & drop is disabled to preserve comments, decorators, and non-symbol code:
+
+- ✅ **TypeScript/JavaScript** — Classes, functions, methods, properties
+- ✅ **Python** — Classes, functions, methods
+- ✅ **Java** — Classes, methods, fields
+- ✅ **C/C++** — Classes, functions, structs
 - ✅ **Any language with VS Code symbol provider** — Generic viewing support
 
 ### Development
@@ -87,7 +100,7 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 - ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python) — drag & drop deferred
 - ✅ **PI-9**: Rich tree item descriptions and tooltips — line ranges and symbol information
 - ✅ **PI-10**: Read-only file protection — drag and drop disabled on git history files and other read-only documents
-- 🔲 **PI-11**: Enable drag & drop for additional languages; advanced customization
+- ✅ **PI-11**: Drag & drop for data/markup formats (JSON, HTML, CSS, XML)
 - 🔲 **PI-12**: Configuration options
 - 🔲 **PI-13**: Show outline for markdown preview when focused
 - 🔲 **PI-14**: Additional markdown symbols (code blocks, quotes)

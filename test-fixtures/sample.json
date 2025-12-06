@@ -1,13 +1,13 @@
 {
-  "name": "outline-eclipsed",
-  "version": "0.5.0",
-  "description": "An outline view for VS Code with drag & drop",
-  "author": "Douglas Hellinger",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/doughgle/outline-eclipsed.git"
   },
+  "version": "0.5.0",
+  "description": "An outline view for VS Code with drag & drop",
+  "name": "outline-eclipsed",
+  "author": "Douglas Hellinger",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.74.0",
     "node": ">=16.0.0"
