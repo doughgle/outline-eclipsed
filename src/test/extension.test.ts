@@ -702,6 +702,8 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 });
 
 suite('PI-12: Expand All Command Tests', () => {
+	// Test document content for expand/collapse tests
+	const nestedHeadingsContent = '# Heading 1\n\nContent 1\n\n## Heading 2\n\nContent 2\n\n### Heading 3\n\nContent 3';
 
 	test('ExpandAll command should be registered', async () => {
 		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
@@ -729,7 +731,7 @@ suite('PI-12: Expand All Command Tests', () => {
 		
 		// Create a markdown document with nested headings
 		const document = await vscode.workspace.openTextDocument({
-			content: '# Heading 1\n\nContent 1\n\n## Heading 2\n\nContent 2\n\n### Heading 3\n\nContent 3',
+			content: nestedHeadingsContent,
 			language: 'markdown'
 		});
 
@@ -751,7 +753,7 @@ suite('PI-12: Expand All Command Tests', () => {
 		
 		// Create a markdown document with nested headings
 		const document = await vscode.workspace.openTextDocument({
-			content: '# Heading 1\n\nContent 1\n\n## Heading 2\n\nContent 2\n\n### Heading 3\n\nContent 3',
+			content: nestedHeadingsContent,
 			language: 'markdown'
 		});
 

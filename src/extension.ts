@@ -134,20 +134,16 @@ export function activate(context: vscode.ExtensionContext) {
 				if (item.children && item.children.length > 0) {
 					try {
 						await treeView.reveal(item, { select: false, focus: false, expand: true });
-						// Expand all children recursively
-						for (const child of item.children) {
-							await expandItem(child);
-						}
+						// Expand all children in parallel for better performance
+						await Promise.all(item.children.map((child: any) => expandItem(child)));
 					} catch (error) {
 						// Silently ignore reveal errors (e.g., item not in tree)
 					}
 				}
 			};
 			
-			// Expand all root items
-			for (const item of provider.rootItems) {
-				await expandItem(item);
-			}
+			// Expand all root items in parallel
+			await Promise.all(provider.rootItems.map((item: any) => expandItem(item)));
 		})
 	);
 
@@ -158,15 +154,15 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			
-			// Collapse all root items (children will be collapsed automatically)
-			for (const item of provider.rootItems) {
+			// Collapse all root items in parallel for better performance
+			await Promise.all(provider.rootItems.map(async (item: any) => {
 				try {
 					// Revealing with expand: false will collapse the item
 					await treeView.reveal(item, { select: false, focus: false, expand: false });
 				} catch (error) {
 					// Silently ignore reveal errors
 				}
-			}
+			}));
 		})
 	);
 
