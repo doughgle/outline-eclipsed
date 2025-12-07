@@ -114,6 +114,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	/**
 	 * PI-12: Helper function to recursively expand a tree item and all its children.
+	 * Expands the given item and then recursively expands all of its descendants in parallel.
+	 * 
 	 * @param treeView - The tree view instance
 	 * @param item - The tree item to expand
 	 */
