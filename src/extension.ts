@@ -122,6 +122,35 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// PI-12: Command to expand all nodes in the tree view
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.expandAll', async () => {
+			if (!treeView.visible) {
+				return;
+			}
+			
+			// Recursively expand all items in the tree
+			const expandItem = async (item: any) => {
+				if (item.children && item.children.length > 0) {
+					try {
+						await treeView.reveal(item, { select: false, focus: false, expand: true });
+						// Expand all children recursively
+						for (const child of item.children) {
+							await expandItem(child);
+						}
+					} catch (error) {
+						// Silently ignore reveal errors (e.g., item not in tree)
+					}
+				}
+			};
+			
+			// Expand all root items
+			for (const item of provider.rootItems) {
+				await expandItem(item);
+			}
+		})
+	);
+
 	const syncTreeViewSelection = async (editor: vscode.TextEditor | undefined) => {
 		if (!editor) {
 			console.log('[TRACE] syncTreeViewSelection: no editor');
