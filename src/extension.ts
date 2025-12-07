@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: provider,
-		showCollapseAll: true,
+		showCollapseAll: false, // Using custom collapse/expand toggle instead
 		canSelectMany: true,
 		dragAndDropController: dragDropController
 	});
@@ -147,6 +147,25 @@ export function activate(context: vscode.ExtensionContext) {
 			// Expand all root items
 			for (const item of provider.rootItems) {
 				await expandItem(item);
+			}
+		})
+	);
+
+	// PI-12: Command to collapse all nodes in the tree view
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.collapseAll', async () => {
+			if (!treeView.visible) {
+				return;
+			}
+			
+			// Collapse all root items (children will be collapsed automatically)
+			for (const item of provider.rootItems) {
+				try {
+					// Revealing with expand: false will collapse the item
+					await treeView.reveal(item, { select: false, focus: false, expand: false });
+				} catch (error) {
+					// Silently ignore reveal errors
+				}
 			}
 		})
 	);
