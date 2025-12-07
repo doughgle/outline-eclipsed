@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { MultiLanguageOutlineProvider } from './multiLanguageOutlineProvider';
 import { TreeDragAndDropController } from './treeDragAndDropController';
+import { OutlineItem } from './outlineItem';
 
 // Export tree view for testing purposes (PI-2)
 export let outlineTreeView: vscode.TreeView<any> | undefined;
@@ -130,12 +131,12 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			
 			// Recursively expand all items in the tree
-			const expandItem = async (item: any) => {
+			const expandItem = async (item: OutlineItem): Promise<void> => {
 				if (item.children && item.children.length > 0) {
 					try {
 						await treeView.reveal(item, { select: false, focus: false, expand: true });
 						// Expand all children in parallel for better performance
-						await Promise.all(item.children.map((child: any) => expandItem(child)));
+						await Promise.all(item.children.map((child: OutlineItem) => expandItem(child)));
 					} catch (error) {
 						// Silently ignore reveal errors (e.g., item not in tree)
 					}
@@ -143,7 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
 			};
 			
 			// Expand all root items in parallel
-			await Promise.all(provider.rootItems.map((item: any) => expandItem(item)));
+			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItem(item)));
 		})
 	);
 
@@ -155,7 +156,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			
 			// Collapse all root items in parallel for better performance
-			await Promise.all(provider.rootItems.map(async (item: any) => {
+			await Promise.all(provider.rootItems.map(async (item: OutlineItem) => {
 				try {
 					// Revealing with expand: false will collapse the item
 					await treeView.reveal(item, { select: false, focus: false, expand: false });
