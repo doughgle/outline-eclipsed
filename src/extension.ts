@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: provider,
-		showCollapseAll: false, // Using custom expand and collapse commands instead of built-in collapse button
+		showCollapseAll: true,
 		canSelectMany: true,
 		dragAndDropController: dragDropController
 	});
@@ -112,27 +112,17 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	context.subscriptions.push(
-		vscode.commands.registerCommand('outlineEclipsed.moveSection', async (sourceStartLine: number, targetLine: number) => {
-			const editor = vscode.window.activeTextEditor;
-			if (!editor) {
-				return false;
-			}
-			
-			return await dragDropController.moveSection(editor, sourceStartLine, targetLine);
-		})
-	);
-
 	/**
 	 * PI-12: Helper function to recursively expand a tree item and all its children.
+	 * @param treeView - The tree view instance
 	 * @param item - The tree item to expand
 	 */
-	const expandItemRecursively = async (item: OutlineItem): Promise<void> => {
+	const expandItemRecursively = async (treeView: vscode.TreeView<OutlineItem>, item: OutlineItem): Promise<void> => {
 		if (item.children && item.children.length > 0) {
 			try {
 				await treeView.reveal(item, { select: false, focus: false, expand: true });
 				// Expand all children in parallel for better performance
-				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(child)));
+				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child)));
 			} catch (error) {
 				// Silently ignore reveal errors (e.g., item not in tree)
 			}
@@ -147,26 +137,18 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			
 			// Expand all root items in parallel
-			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(item)));
+			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
 		})
 	);
 
-	// PI-12: Command to collapse all nodes in the tree view
 	context.subscriptions.push(
-		vscode.commands.registerCommand('outlineEclipsed.collapseAll', async () => {
-			if (!treeView.visible) {
-				return;
+		vscode.commands.registerCommand('outlineEclipsed.moveSection', async (sourceStartLine: number, targetLine: number) => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) {
+				return false;
 			}
 			
-			// Collapse all root items in parallel for better performance
-			await Promise.all(provider.rootItems.map(async (item: OutlineItem) => {
-				try {
-					// Revealing with expand: false will collapse the item
-					await treeView.reveal(item, { select: false, focus: false, expand: false });
-				} catch (error) {
-					// Silently ignore reveal errors
-				}
-			}));
+			return await dragDropController.moveSection(editor, sourceStartLine, targetLine);
 		})
 	);
 
