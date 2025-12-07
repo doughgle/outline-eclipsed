@@ -56,6 +56,11 @@
         "title": "Go to Outline Item"
       },
       {
+        "command": "outlineEclipsed.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
+      },
+      {
         "command": "outlineEclipsed.expandAll",
         "title": "Expand All",
         "icon": "$(expand-all)"
@@ -63,6 +68,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "outlineEclipsed.collapseAll",
+          "when": "view == outlineEclipsed",
+          "group": "navigation"
+        },
         {
           "command": "outlineEclipsed.expandAll",
           "when": "view == outlineEclipsed",
