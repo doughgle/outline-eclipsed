@@ -1,6 +1,5 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { MultiLanguageOutlineProvider } from '../multiLanguageOutlineProvider';
 
 /**
  * PI-12: Integration test for expand all command
@@ -38,14 +37,15 @@ suite('PI-12: Expand All Integration Test', () => {
 		// Wait for tree view to populate
 		await new Promise(resolve => setTimeout(resolve, 1000));
 
-		// Get tree view reference
+		// Get tree view and provider references
 		const extensionModule = await import('../extension.js');
 		const treeView = extensionModule.outlineTreeView;
+		const provider = extensionModule.outlineProvider;
+		
 		assert.ok(treeView, 'Tree view should be available');
+		assert.ok(provider, 'Provider should be available');
 
-		// Create a provider to access the outline items
-		const provider = new MultiLanguageOutlineProvider();
-		await provider.refresh(document);
+		// Access the outline items from the same provider instance used by the tree view
 		const rootItems = provider.rootItems;
 		
 		assert.ok(rootItems.length > 0, 'Should have root items in the outline');

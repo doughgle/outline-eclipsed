@@ -3,8 +3,9 @@ import { MultiLanguageOutlineProvider } from './multiLanguageOutlineProvider';
 import { TreeDragAndDropController } from './treeDragAndDropController';
 import { OutlineItem } from './outlineItem';
 
-// Export tree view for testing purposes (PI-2)
+// Export tree view and provider for testing purposes (PI-2)
 export let outlineTreeView: vscode.TreeView<any> | undefined;
+export let outlineProvider: MultiLanguageOutlineProvider | undefined;
 
 /**
  * Activates the Outline Eclipsed extension.
@@ -29,8 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
 		dragAndDropController: dragDropController
 	});
 	
-	// Export tree view for testing (PI-2)
+	// Export tree view and provider for testing (PI-2)
 	outlineTreeView = treeView;
+	outlineProvider = provider;
 
 	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined, message?: string) => {
 		if (!editor) {
