@@ -700,3 +700,39 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 	});
 
 });
+
+suite('PI-12: Expand All Command Tests', () => {
+
+	test('ExpandAll command should be registered', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+
+		const commands = await vscode.commands.getCommands(true);
+		const hasExpandAllCommand = commands.includes('outlineEclipsed.expandAll');
+		
+		assert.ok(hasExpandAllCommand, 'outlineEclipsed.expandAll command should be registered');
+	});
+
+	test('ExpandAll command should execute without errors', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+		
+		// Create a markdown document with nested headings
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\nContent 1\n\n## Heading 2\n\nContent 2\n\n### Heading 3\n\nContent 3',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Execute expandAll command - should not throw error
+		try {
+			await vscode.commands.executeCommand('outlineEclipsed.expandAll');
+			assert.ok(true, 'ExpandAll command executed successfully');
+		} catch (error) {
+			assert.fail(`ExpandAll command should not throw error: ${error}`);
+		}
+	});
+
+});
