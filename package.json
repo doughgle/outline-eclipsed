@@ -54,8 +54,22 @@
       {
         "command": "outlineEclipsed.gotoItem",
         "title": "Go to Outline Item"
+      },
+      {
+        "command": "outlineEclipsed.expandAll",
+        "title": "Expand All",
+        "icon": "$(expand-all)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "outlineEclipsed.expandAll",
+          "when": "view == outlineEclipsed",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
