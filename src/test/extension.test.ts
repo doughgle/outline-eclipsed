@@ -704,6 +704,8 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 suite('PI-12: Expand All Command Tests', () => {
 	// Test document content for expand/collapse tests
 	const nestedHeadingsContent = '# Heading 1\n\nContent 1\n\n## Heading 2\n\nContent 2\n\n### Heading 3\n\nContent 3';
+	// Delay for tree view initialization after opening a document
+	const TREE_INITIALIZATION_DELAY = 500;
 
 	test('ExpandAll command should be registered', async () => {
 		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
@@ -736,7 +738,7 @@ suite('PI-12: Expand All Command Tests', () => {
 		});
 
 		await vscode.window.showTextDocument(document);
-		await new Promise(resolve => setTimeout(resolve, 500));
+		await new Promise(resolve => setTimeout(resolve, TREE_INITIALIZATION_DELAY));
 
 		// Execute expandAll command - should not throw error
 		try {
@@ -758,7 +760,7 @@ suite('PI-12: Expand All Command Tests', () => {
 		});
 
 		await vscode.window.showTextDocument(document);
-		await new Promise(resolve => setTimeout(resolve, 500));
+		await new Promise(resolve => setTimeout(resolve, TREE_INITIALIZATION_DELAY));
 
 		// Execute collapseAll command - should not throw error
 		try {

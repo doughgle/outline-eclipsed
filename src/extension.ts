@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: provider,
-		showCollapseAll: false, // Using custom collapse/expand toggle instead
+		showCollapseAll: false, // Using custom expand and collapse commands instead of built-in collapse button
 		canSelectMany: true,
 		dragAndDropController: dragDropController
 	});
@@ -123,6 +123,22 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	/**
+	 * PI-12: Helper function to recursively expand a tree item and all its children.
+	 * @param item - The tree item to expand
+	 */
+	const expandItemRecursively = async (item: OutlineItem): Promise<void> => {
+		if (item.children && item.children.length > 0) {
+			try {
+				await treeView.reveal(item, { select: false, focus: false, expand: true });
+				// Expand all children in parallel for better performance
+				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(child)));
+			} catch (error) {
+				// Silently ignore reveal errors (e.g., item not in tree)
+			}
+		}
+	};
+
 	// PI-12: Command to expand all nodes in the tree view
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.expandAll', async () => {
@@ -130,21 +146,8 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			
-			// Recursively expand all items in the tree
-			const expandItem = async (item: OutlineItem): Promise<void> => {
-				if (item.children && item.children.length > 0) {
-					try {
-						await treeView.reveal(item, { select: false, focus: false, expand: true });
-						// Expand all children in parallel for better performance
-						await Promise.all(item.children.map((child: OutlineItem) => expandItem(child)));
-					} catch (error) {
-						// Silently ignore reveal errors (e.g., item not in tree)
-					}
-				}
-			};
-			
 			// Expand all root items in parallel
-			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItem(item)));
+			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(item)));
 		})
 	);
 
