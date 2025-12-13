@@ -122,6 +122,101 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// PI-12: Register keyboard shortcut commands for moving outline items
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.moveUp', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor || !treeView.selection || treeView.selection.length === 0) {
+				return;
+			}
+
+			// Validate document supports move operations
+			const validation = await dragDropController.validateDocumentForMove(editor.document);
+			if (!validation.isValid) {
+				if (validation.errorMessage) {
+					vscode.window.showWarningMessage(validation.errorMessage);
+				}
+				return;
+			}
+
+			// Get all items from provider and flatten the tree
+			const allItems = provider.getAllItemsFlattened();
+			if (allItems.length === 0) {
+				return;
+			}
+
+			// Filter and sort selected items
+			const filteredItems = dragDropController['filterRedundantItems'](treeView.selection);
+			const sortedItems = dragDropController['sortItemsByPosition'](filteredItems);
+
+			// Find target (item immediately before first selected)
+			const precedingItem = dragDropController['itemProcessor'].findPrecedingItem(allItems, sortedItems);
+			if (!precedingItem) {
+				// Already at document start - no-op
+				return;
+			}
+
+			// Move to line before preceding item
+			const targetLine = precedingItem.range.start.line;
+			const itemsWithRanges = sortedItems.map(item => ({
+				range: item.range,
+				label: item.label,
+				level: item.level
+			}));
+
+			await dragDropController.moveSections(editor, itemsWithRanges, targetLine);
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.moveDown', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor || !treeView.selection || treeView.selection.length === 0) {
+				return;
+			}
+
+			// Validate document supports move operations
+			const validation = await dragDropController.validateDocumentForMove(editor.document);
+			if (!validation.isValid) {
+				if (validation.errorMessage) {
+					vscode.window.showWarningMessage(validation.errorMessage);
+				}
+				return;
+			}
+
+			// Get all items from provider and flatten the tree
+			const allItems = provider.getAllItemsFlattened();
+			if (allItems.length === 0) {
+				return;
+			}
+
+			// Filter and sort selected items
+			const filteredItems = dragDropController['filterRedundantItems'](treeView.selection);
+			const sortedItems = dragDropController['sortItemsByPosition'](filteredItems);
+
+			// Find target (item immediately after last selected)
+			// Note: For moveDown, we find the item after the FIRST selected item,
+			// not the last, to match user expectation for multi-select behavior.
+			// This ensures non-contiguous selections move as a group to just below
+			// the immediate follower of the first item.
+			const followingItem = dragDropController['itemProcessor'].findFollowingItem(allItems, [sortedItems[0]]);
+			if (!followingItem) {
+				// Already at document end - no-op
+				return;
+			}
+
+			// Move to line after following item (i.e., after its entire range)
+			const targetLine = followingItem.range.end.line + 1;
+			const itemsWithRanges = sortedItems.map(item => ({
+				range: item.range,
+				label: item.label,
+				level: item.level
+			}));
+
+			await dragDropController.moveSections(editor, itemsWithRanges, targetLine);
+		})
+	);
+
 	const syncTreeViewSelection = async (editor: vscode.TextEditor | undefined) => {
 		if (!editor) {
 			console.log('[TRACE] syncTreeViewSelection: no editor');

@@ -18,7 +18,12 @@
   - Add visual warning in tree view with lock icon when file is read-only
   - Show clear error message when drop is attempted on read-only file
 - ✅ **PI-11**: Enable drag & drop for built-in data/markup/declarative formats (JSON, XML, HTML, CSS, INI)
-- 🔲 **PI-12**: enable shortcuts to move items up/down
+- ✅ **PI-12**: Keyboard shortcuts for moving items up/down
+  - Alt+Up: Move selected item(s) up one position
+  - Alt+Down: Move selected item(s) down one position
+  - Reuses drag & drop logic for consistency
+  - Supports multi-select with Ctrl
+  - No-op at document boundaries
 - 🔲 **PI-13** enable expand all nodes
 - 🔲 **PI-14** delete section from outline tree view
 - 🔲 **PI-15**: Configuration options

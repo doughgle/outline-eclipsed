@@ -54,6 +54,26 @@
       {
         "command": "outlineEclipsed.gotoItem",
         "title": "Go to Outline Item"
+      },
+      {
+        "command": "outlineEclipsed.moveUp",
+        "title": "Move Outline Item Up"
+      },
+      {
+        "command": "outlineEclipsed.moveDown",
+        "title": "Move Outline Item Down"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "outlineEclipsed.moveUp",
+        "key": "alt+up",
+        "when": "focusedView == 'outlineEclipsed' && listFocus"
+      },
+      {
+        "command": "outlineEclipsed.moveDown",
+        "key": "alt+down",
+        "when": "focusedView == 'outlineEclipsed' && listFocus"
       }
     ]
   },

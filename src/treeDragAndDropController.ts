@@ -108,6 +108,34 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
+	 * PI-12: Validate that a document supports move operations.
+	 * Checks both language support and write permissions.
+	 * 
+	 * @param document - Document to validate
+	 * @returns Object with isValid flag and optional error message
+	 */
+	async validateDocumentForMove(document: vscode.TextDocument): Promise<{ isValid: boolean; errorMessage?: string }> {
+		// Check language support
+		if (!DRAG_DROP_SUPPORTED_LANGUAGES.includes(document.languageId)) {
+			return {
+				isValid: false,
+				errorMessage: `Move operations are not supported for ${document.languageId} files`
+			};
+		}
+
+		// Check if document is writable
+		const isWritable = await this.isDocumentWritable(document);
+		if (!isWritable) {
+			return {
+				isValid: false,
+				errorMessage: 'Cannot move sections: This file is read-only'
+			};
+		}
+
+		return { isValid: true };
+	}
+
+	/**
 	 * PI-5: Clean up resources
 	 */
 	dispose(): void {
@@ -448,8 +476,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	): Promise<void> {
 		// Only allow drag for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+		if (!editor) {
+			return;
+		}
+
+		const validation = await this.validateDocumentForMove(editor.document);
+		if (!validation.isValid) {
+			console.log(validation.errorMessage);
 			return;
 		}
 		
@@ -478,17 +511,17 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	): Promise<void> {
 		// Only allow drop for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
-		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+		if (!editor) {
 			return;
 		}
-		
-		// Check if the document is read-only
-		const isWritable = await this.isDocumentWritable(editor.document);
-		if (!isWritable) {
-			vscode.window.showWarningMessage(
-				'Cannot move sections: This file is read-only. Please make the file writable to enable drag and drop.'
-			);
+
+		const validation = await this.validateDocumentForMove(editor.document);
+		if (!validation.isValid) {
+			if (validation.errorMessage?.includes('read-only')) {
+				vscode.window.showWarningMessage(validation.errorMessage);
+			} else {
+				console.log(validation.errorMessage);
+			}
 			return;
 		}
 		
@@ -504,12 +537,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			console.log(`PI-3/PI-6: Drop operation - ${draggedItems.length} item(s) dropped`);
 			
 			if (draggedItems.length === 0) {
-				return;
-			}
-
-			const editor = vscode.window.activeTextEditor;
-			if (!editor) {
-				console.error('PI-3: No active editor');
 				return;
 			}
 

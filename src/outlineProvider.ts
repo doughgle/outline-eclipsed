@@ -243,4 +243,26 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         }
         return undefined;
     }
+
+    /**
+     * PI-12: Get all outline items in a flat list, in document order.
+     * Used by keyboard shortcuts to find preceding/following items.
+     * 
+     * @returns Flattened array of all outline items
+     */
+    getAllItemsFlattened(): OutlineItem[] {
+        const result: OutlineItem[] = [];
+        
+        const flatten = (items: OutlineItem[]) => {
+            for (const item of items) {
+                result.push(item);
+                if (item.children.length > 0) {
+                    flatten(item.children);
+                }
+            }
+        };
+        
+        flatten(this.items);
+        return result;
+    }
 }
