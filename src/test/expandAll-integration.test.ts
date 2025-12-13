@@ -64,8 +64,8 @@ suite('PI-12: Expand All Integration Test', () => {
 		assert.ok(greatGrandchild, 'Should find Great-grandchild 2.1.1.1');
 
 		// Act - First collapse all, then expand all to test the full cycle
-		// Collapse all using VS Code's built-in command
-		await vscode.commands.executeCommand('workbench.actions.treeView.outlineEclipsed.collapseAll');
+		// Collapse all using our custom command
+		await vscode.commands.executeCommand('outlineEclipsed.collapseAll');
 		await new Promise(resolve => setTimeout(resolve, 500));
 
 		// Now execute expand all command

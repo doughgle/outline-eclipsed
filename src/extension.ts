@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: provider,
-		showCollapseAll: true,
+		showCollapseAll: false, // Using custom collapse all to track state
 		canSelectMany: true,
 		dragAndDropController: dragDropController
 	});
@@ -33,6 +33,19 @@ export function activate(context: vscode.ExtensionContext) {
 	// Export tree view and provider for testing (PI-2)
 	outlineTreeView = treeView;
 	outlineProvider = provider;
+
+	// Track tree expansion state for toggling between expand/collapse buttons
+	// Start with canCollapse true (tree is expanded by default)
+	let isExpanded = true;
+	
+	const updateButtonState = (expanded: boolean) => {
+		isExpanded = expanded;
+		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canExpand', !expanded);
+		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canCollapse', expanded);
+	};
+	
+	// Initialize button state
+	updateButtonState(true);
 
 	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined, message?: string) => {
 		if (!editor) {
@@ -142,6 +155,30 @@ export function activate(context: vscode.ExtensionContext) {
 			
 			// Expand all root items in parallel
 			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
+			
+			// Update button state to show collapse all button
+			updateButtonState(true);
+		})
+	);
+
+	// PI-12: Command to collapse all nodes in the tree view
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.collapseAll', async () => {
+			if (!treeView.visible) {
+				return;
+			}
+			
+			// Collapse all root items by revealing them with expand: false
+			await Promise.all(provider.rootItems.map(async (item: OutlineItem) => {
+				try {
+					await treeView.reveal(item, { select: false, focus: false, expand: false });
+				} catch (error) {
+					// Silently ignore reveal errors
+				}
+			}));
+			
+			// Update button state to show expand all button
+			updateButtonState(false);
 		})
 	);
 
