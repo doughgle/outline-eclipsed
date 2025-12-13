@@ -2,14 +2,14 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 
 /**
- * PI-12: Integration test for expand all command
+ * PI-12: Integration test for expand/collapse all commands
  * 
  * Tests follow AAA (Arrange-Act-Assert) pattern.
- * Tests verify actual behavior - that all items are shown/expanded in tree view.
+ * Tests verify actual behavior - that all items are shown/expanded or collapsed in tree view.
  */
-suite('PI-12: Expand All Integration Test', () => {
+suite('PI-12: Expand/Collapse All Integration Test', () => {
 
-	test('expandAll expands all nodes in multi-root markdown document', async function() {
+	test('expandAll expands all nodes and collapseAll collapses them in multi-root markdown document', async function() {
 		this.timeout(10000); // Allow extra time for tree view operations
 
 		// Arrange
