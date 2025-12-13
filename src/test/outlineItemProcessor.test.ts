@@ -352,6 +352,71 @@ suite('OutlineItemProcessor Unit Tests', () => {
 			// THEN: Should still return item1 (preceding the first in document order)
 			assert.strictEqual(result, item1, 'Should sort selection and return preceding for first item');
 		});
+
+		test('Skips parent items when finding preceding item', () => {
+			// GIVEN: Parent with child, where child is deeply nested
+			const parent = new OutlineItem('Parent', 1, new vscode.Range(0, 0, 10, 0), new vscode.Range(0, 0, 0, 6));
+			const child = new OutlineItem('Child', 2, new vscode.Range(2, 0, 5, 0), new vscode.Range(2, 0, 2, 5));
+			const sibling = new OutlineItem('Sibling', 1, new vscode.Range(11, 0, 15, 0), new vscode.Range(11, 0, 11, 7));
+			// Flattened list has parent, then child
+			const allItems = [parent, child, sibling];
+
+			// WHEN: Finding preceding for child (which is inside parent)
+			const result = processor.findPrecedingItem(allItems, [child]);
+
+			// THEN: Should return undefined (parent contains child, so can't move before parent)
+			// The only item before child is parent, but parent contains child
+			assert.strictEqual(result, undefined, 'Should skip parent and return undefined (no valid preceding item)');
+		});
+
+		test('Returns preceding sibling when parent is not in the way', () => {
+			// GIVEN: Two children of same parent, in sequence
+			const parent = new OutlineItem('Parent', 1, new vscode.Range(0, 0, 20, 0), new vscode.Range(0, 0, 0, 6));
+			const child1 = new OutlineItem('Child1', 2, new vscode.Range(2, 0, 8, 0), new vscode.Range(2, 0, 2, 6));
+			const child2 = new OutlineItem('Child2', 2, new vscode.Range(10, 0, 15, 0), new vscode.Range(10, 0, 10, 6));
+			const allItems = [parent, child1, child2];
+
+			// WHEN: Finding preceding for child2
+			const result = processor.findPrecedingItem(allItems, [child2]);
+
+			// THEN: Should return child1 (preceding sibling, not parent)
+			assert.strictEqual(result, child1, 'Should return preceding sibling child1');
+		});
+
+		test('Returns earlier item that does not contain selected item', () => {
+			// GIVEN: Nested structure with grandparent > parent > child
+			const grandparent = new OutlineItem('Grandparent', 1, new vscode.Range(0, 0, 30, 0), new vscode.Range(0, 0, 0, 11));
+			const parent = new OutlineItem('Parent', 2, new vscode.Range(5, 0, 25, 0), new vscode.Range(5, 0, 5, 6));
+			const child = new OutlineItem('Child', 3, new vscode.Range(10, 0, 15, 0), new vscode.Range(10, 0, 10, 5));
+			const allItems = [grandparent, parent, child];
+
+			// WHEN: Finding preceding for child (both grandparent and parent contain it)
+			const result = processor.findPrecedingItem(allItems, [child]);
+
+			// THEN: Should return undefined (all preceding items are ancestors)
+			assert.strictEqual(result, undefined, 'Should return undefined when all preceding items are ancestors');
+		});
+
+		test('Skips deeply nested children when finding preceding sibling', () => {
+			// GIVEN: Structure like <body> with children, and <head> after body
+			// <body> (0-40)
+			//   <main> (5-35)
+			//     <section> (10-30)
+			//       <h2> (15-16)
+			// <head> (45-50)
+			const body = new OutlineItem('body', 1, new vscode.Range(0, 0, 40, 0), new vscode.Range(0, 0, 0, 4));
+			const main = new OutlineItem('main', 2, new vscode.Range(5, 0, 35, 0), new vscode.Range(5, 0, 5, 4));
+			const section = new OutlineItem('section', 3, new vscode.Range(10, 0, 30, 0), new vscode.Range(10, 0, 10, 7));
+			const h2 = new OutlineItem('h2', 4, new vscode.Range(15, 0, 16, 0), new vscode.Range(15, 0, 15, 2));
+			const head = new OutlineItem('head', 1, new vscode.Range(45, 0, 50, 0), new vscode.Range(45, 0, 45, 4));
+			const allItems = [body, main, section, h2, head];
+
+			// WHEN: Finding preceding for head (which is a sibling of body)
+			const result = processor.findPrecedingItem(allItems, [head]);
+
+			// THEN: Should return body (not h2, section, or main which are descendants of body)
+			assert.strictEqual(result, body, 'Should skip all descendants of body and return body itself');
+		});
 	});
 
 	suite('PI-12: findFollowingItem', () => {

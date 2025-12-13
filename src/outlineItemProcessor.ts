@@ -64,6 +64,10 @@ export class OutlineItemProcessor {
 	 * Returns the item that appears right before the first item in the selection.
 	 * Used for Alt+Up keyboard shortcut to determine drop target.
 	 * 
+	 * Skips items that contain the selected item (ancestors) AND items that are
+	 * nested within those ancestors (to avoid moving into sibling branches).
+	 * Returns the outermost valid preceding item (not nested within others).
+	 * 
 	 * @param allItems - Complete flat list of all outline items in document order
 	 * @param selectedItems - Currently selected items (may be unsorted)
 	 * @returns The item immediately before the first selected item, or undefined if at document start
@@ -87,8 +91,26 @@ export class OutlineItemProcessor {
 			return undefined;
 		}
 
-		// Return the item immediately before
-		return allItems[firstSelectedIndex - 1];
+		// Find all valid preceding items (those whose ranges end before selected starts)
+		// Then return the outermost one (not nested within others)
+		let bestCandidate: OutlineItem | undefined = undefined;
+		
+		for (let i = firstSelectedIndex - 1; i >= 0; i--) {
+			const candidate = allItems[i];
+			
+			// Check if candidate's range ends before selected item's range starts
+			if (candidate.range.end.isBefore(firstSelected.range.start) ||
+			    candidate.range.end.isEqual(firstSelected.range.start)) {
+				
+				// If we have a bestCandidate, check if this new candidate contains it
+				// If so, replace it (we want the outermost item)
+				if (!bestCandidate || candidate.range.contains(bestCandidate.range)) {
+					bestCandidate = candidate;
+				}
+			}
+		}
+
+		return bestCandidate;
 	}
 
 	/**
