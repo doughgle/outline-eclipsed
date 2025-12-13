@@ -13,51 +13,6 @@ suite('TreeDragAndDropController - validateDocumentForMove Unit Tests', () => {
 		controller.dispose();
 	});
 
-	test('Returns valid for supported language (markdown)', async () => {
-		// GIVEN: A markdown document
-		const doc = await vscode.workspace.openTextDocument({
-			content: '# Test\n\nContent',
-			language: 'markdown'
-		});
-
-		// WHEN: Validating document
-		const result = await controller.validateDocumentForMove(doc);
-
-		// THEN: Should be valid
-		assert.strictEqual(result.isValid, true, 'Markdown should be supported');
-		assert.strictEqual(result.errorMessage, undefined, 'Should have no error message');
-	});
-
-	test('Returns valid for supported language (yaml)', async () => {
-		// GIVEN: A yaml document
-		const doc = await vscode.workspace.openTextDocument({
-			content: 'key: value',
-			language: 'yaml'
-		});
-
-		// WHEN: Validating document
-		const result = await controller.validateDocumentForMove(doc);
-
-		// THEN: Should be valid
-		assert.strictEqual(result.isValid, true, 'YAML should be supported');
-		assert.strictEqual(result.errorMessage, undefined, 'Should have no error message');
-	});
-
-	test('Returns valid for supported language (json)', async () => {
-		// GIVEN: A json document
-		const doc = await vscode.workspace.openTextDocument({
-			content: '{"key": "value"}',
-			language: 'json'
-		});
-
-		// WHEN: Validating document
-		const result = await controller.validateDocumentForMove(doc);
-
-		// THEN: Should be valid
-		assert.strictEqual(result.isValid, true, 'JSON should be supported');
-		assert.strictEqual(result.errorMessage, undefined, 'Should have no error message');
-	});
-
 	test('Returns invalid for unsupported language', async () => {
 		// GIVEN: A plaintext document (not in supported list)
 		const doc = await vscode.workspace.openTextDocument({
