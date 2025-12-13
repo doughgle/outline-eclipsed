@@ -168,10 +168,10 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			
-			// Collapse all root items by revealing them with expand: false
+			// Collapse all root items by revealing them with expand: 0 (collapse)
 			await Promise.all(provider.rootItems.map(async (item: OutlineItem) => {
 				try {
-					await treeView.reveal(item, { select: false, focus: false, expand: false });
+					await treeView.reveal(item, { select: false, focus: false, expand: 0 });
 				} catch (error) {
 					// Silently ignore reveal errors
 				}
