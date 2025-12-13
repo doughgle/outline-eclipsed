@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
 import { MultiLanguageOutlineProvider } from './multiLanguageOutlineProvider';
 import { TreeDragAndDropController } from './treeDragAndDropController';
+import { OutlineItem } from './outlineItem';
 
-// Export tree view for testing purposes (PI-2)
+// Export tree view and provider for testing purposes (PI-2)
 export let outlineTreeView: vscode.TreeView<any> | undefined;
+export let outlineProvider: MultiLanguageOutlineProvider | undefined;
 
 /**
  * Activates the Outline Eclipsed extension.
@@ -23,13 +25,27 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const treeView = vscode.window.createTreeView('outlineEclipsed', {
 		treeDataProvider: provider,
-		showCollapseAll: true,
+		showCollapseAll: false, // Using custom collapse all to track state
 		canSelectMany: true,
 		dragAndDropController: dragDropController
 	});
 	
-	// Export tree view for testing (PI-2)
+	// Export tree view and provider for testing (PI-2)
 	outlineTreeView = treeView;
+	outlineProvider = provider;
+
+	// Track tree expansion state for toggling between expand/collapse buttons
+	// Start with canCollapse true (tree is expanded by default)
+	let isExpanded = true;
+	
+	const updateButtonState = (expanded: boolean) => {
+		isExpanded = expanded;
+		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canExpand', !expanded);
+		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canCollapse', expanded);
+	};
+	
+	// Initialize button state
+	updateButtonState(true);
 
 	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined, message?: string) => {
 		if (!editor) {
@@ -108,6 +124,61 @@ export function activate(context: vscode.ExtensionContext) {
 				editor.selection = selection;
 				editor.revealRange(item.range);
 			}
+		})
+	);
+
+	/**
+	 * PI-12: Helper function to recursively expand a tree item and all its children.
+	 * Expands the given item and then recursively expands all of its descendants in parallel.
+	 * 
+	 * @param treeView - The tree view instance
+	 * @param item - The tree item to expand
+	 */
+	const expandItemRecursively = async (treeView: vscode.TreeView<OutlineItem>, item: OutlineItem): Promise<void> => {
+		if (item.children && item.children.length > 0) {
+			try {
+				await treeView.reveal(item, { select: false, focus: false, expand: true });
+				// Expand all children in parallel for better performance
+				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child)));
+			} catch (error) {
+				// Silently ignore reveal errors (e.g., item not in tree)
+			}
+		}
+	};
+
+	// PI-12: Command to expand all nodes in the tree view
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.expandAll', async () => {
+			if (!treeView.visible) {
+				return;
+			}
+			
+			// Expand all root items in parallel
+			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
+			
+			// Update button state to show collapse all button
+			updateButtonState(true);
+		})
+	);
+
+	// PI-12: Command to collapse all nodes in the tree view
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.collapseAll', async () => {
+			if (!treeView.visible) {
+				return;
+			}
+			
+			// Collapse all root items by revealing them with expand: 0 (collapse)
+			await Promise.all(provider.rootItems.map(async (item: OutlineItem) => {
+				try {
+					await treeView.reveal(item, { select: false, focus: false, expand: 0 });
+				} catch (error) {
+					// Silently ignore reveal errors
+				}
+			}));
+			
+			// Update button state to show expand all button
+			updateButtonState(false);
 		})
 	);
 

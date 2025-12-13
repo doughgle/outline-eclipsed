@@ -54,8 +54,32 @@
       {
         "command": "outlineEclipsed.gotoItem",
         "title": "Go to Outline Item"
+      },
+      {
+        "command": "outlineEclipsed.expandAll",
+        "title": "Expand All",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "outlineEclipsed.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "outlineEclipsed.expandAll",
+          "when": "view == outlineEclipsed && outlineEclipsed.canExpand",
+          "group": "navigation"
+        },
+        {
+          "command": "outlineEclipsed.collapseAll",
+          "when": "view == outlineEclipsed && outlineEclipsed.canCollapse",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
