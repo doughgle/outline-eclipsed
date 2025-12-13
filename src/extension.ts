@@ -123,6 +123,8 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	// PI-12: Register keyboard shortcut commands for moving outline items
+	// When items are moved, the selection is automatically restored to follow
+	// the moved items to their new positions, allowing continuous moves.
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.moveUp', async () => {
 			const editor = vscode.window.activeTextEditor;
@@ -163,6 +165,32 @@ export function activate(context: vscode.ExtensionContext) {
 				label: item.label,
 				level: item.level
 			}));
+
+			// Remember original labels to restore selection after move
+			const movedItemLabels = sortedItems.map(item => item.label);
+
+			// Set up event-based synchronization: restore selection after document change
+			// This avoids race conditions when moves happen quickly
+			// BUG: selection works correctly if you move up and down slowly. however, once you move faster, the selection doesn't keep up and the doc can get very muddled!
+			// eliminate the race condition between selection and move. dont use waits. find a way for event based trigger.
+			// reproduce, debug and fix.
+			const disposable = vscode.workspace.onDidChangeTextDocument((event) => {
+				if (event.document === editor.document) {
+					disposable.dispose();
+					// Document has been updated, tree will refresh via its existing listener.
+					// Wait one tick for the provider to refresh, then restore selection.
+					setImmediate(() => {
+						const updatedAllItems = provider.getAllItemsFlattened();
+						const movedItems = updatedAllItems.filter(item => movedItemLabels.includes(item.label));
+						if (movedItems.length > 0) {
+							// Reveal each moved item with select=true to restore selection
+							for (const item of movedItems) {
+								treeView.reveal(item, { select: true, focus: false });
+							}
+						}
+					});
+				}
+			});
 
 			await dragDropController.moveSections(editor, itemsWithRanges, targetLine);
 		})
@@ -212,6 +240,29 @@ export function activate(context: vscode.ExtensionContext) {
 				label: item.label,
 				level: item.level
 			}));
+
+			// Remember original labels to restore selection after move
+			const movedItemLabels = sortedItems.map(item => item.label);
+
+			// Set up event-based synchronization: restore selection after document change
+			// This avoids race conditions when moves happen quickly
+			const disposable = vscode.workspace.onDidChangeTextDocument((event) => {
+				if (event.document === editor.document) {
+					disposable.dispose();
+					// Document has been updated, tree will refresh via its existing listener.
+					// Wait one tick for the provider to refresh, then restore selection.
+					setImmediate(() => {
+						const updatedAllItems = provider.getAllItemsFlattened();
+						const movedItems = updatedAllItems.filter(item => movedItemLabels.includes(item.label));
+						if (movedItems.length > 0) {
+							// Reveal each moved item with select=true to restore selection
+							for (const item of movedItems) {
+								treeView.reveal(item, { select: true, focus: false });
+							}
+						}
+					});
+				}
+			});
 
 			await dragDropController.moveSections(editor, itemsWithRanges, targetLine);
 		})
