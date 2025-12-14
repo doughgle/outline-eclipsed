@@ -35,17 +35,19 @@ export function activate(context: vscode.ExtensionContext) {
 	outlineProvider = provider;
 
 	// Track tree expansion state for toggling between expand/collapse buttons
-	// Start with canCollapse true (tree is expanded by default)
-	let isExpanded = true;
+	// Set tracks which items are currently expanded
+	const expandedItems = new Set<OutlineItem>();
 	
-	const updateButtonState = (expanded: boolean) => {
-		isExpanded = expanded;
-		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canExpand', !expanded);
-		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canCollapse', expanded);
+	const updateButtonState = () => {
+		// Show "Collapse All" button if any items are expanded
+		// Show "Expand All" button if no items are expanded (tree is fully collapsed)
+		const hasExpandedItems = expandedItems.size > 0;
+		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canExpand', !hasExpandedItems);
+		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canCollapse', hasExpandedItems);
 	};
 	
-	// Initialize button state
-	updateButtonState(true);
+	// Initialize button state - tree starts fully collapsed
+	updateButtonState();
 
 	const updateTreeViewMessage = (editor: vscode.TextEditor | undefined, message?: string) => {
 		if (!editor) {
@@ -130,6 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
 	/**
 	 * PI-12: Helper function to recursively expand a tree item and all its children.
 	 * Expands the given item and then recursively expands all of its descendants in parallel.
+	 * Tracks expanded items for button state management.
 	 * 
 	 * @param treeView - The tree view instance
 	 * @param item - The tree item to expand
@@ -138,8 +141,32 @@ export function activate(context: vscode.ExtensionContext) {
 		if (item.children && item.children.length > 0) {
 			try {
 				await treeView.reveal(item, { select: false, focus: false, expand: true });
+				expandedItems.add(item);
 				// Expand all children in parallel for better performance
 				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child)));
+			} catch (error) {
+				// Silently ignore reveal errors (e.g., item not in tree)
+			}
+		}
+	};
+
+	/**
+	 * PI-12: Helper function to recursively collapse a tree item and all its children.
+	 * Collapses the given item and then recursively collapses all of its descendants in parallel.
+	 * Complementary operation to expandItemRecursively.
+	 * Tracks collapsed items for button state management.
+	 * 
+	 * @param treeView - The tree view instance
+	 * @param item - The tree item to collapse
+	 */
+	const collapseItemRecursively = async (treeView: vscode.TreeView<OutlineItem>, item: OutlineItem): Promise<void> => {
+		if (item.children && item.children.length > 0) {
+			try {
+				// First recursively collapse all children
+				await Promise.all(item.children.map((child: OutlineItem) => collapseItemRecursively(treeView, child)));
+				// Then collapse the item itself
+				await treeView.reveal(item, { select: false, focus: false, expand: false });
+				expandedItems.delete(item);
 			} catch (error) {
 				// Silently ignore reveal errors (e.g., item not in tree)
 			}
@@ -156,8 +183,8 @@ export function activate(context: vscode.ExtensionContext) {
 			// Expand all root items in parallel
 			await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
 			
-			// Update button state to show collapse all button
-			updateButtonState(true);
+			// Update button state
+			updateButtonState();
 		})
 	);
 
@@ -168,17 +195,11 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			
-			// Collapse all root items by revealing them with expand: 0 (collapse)
-			await Promise.all(provider.rootItems.map(async (item: OutlineItem) => {
-				try {
-					await treeView.reveal(item, { select: false, focus: false, expand: 0 });
-				} catch (error) {
-					// Silently ignore reveal errors
-				}
-			}));
+			// Collapse all root items and their children recursively
+			await Promise.all(provider.rootItems.map((item: OutlineItem) => collapseItemRecursively(treeView, item)));
 			
-			// Update button state to show expand all button
-			updateButtonState(false);
+			// Update button state
+			updateButtonState();
 		})
 	);
 
@@ -224,10 +245,29 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	};
 
+	// PI-12: Listen to tree expansion events to update button state
+	context.subscriptions.push(
+		treeView.onDidExpandElement((event: vscode.TreeViewExpansionEvent<OutlineItem>) => {
+			expandedItems.add(event.element);
+			updateButtonState();
+		})
+	);
+
+	// PI-12: Listen to tree collapse events to update button state
+	context.subscriptions.push(
+		treeView.onDidCollapseElement((event: vscode.TreeViewExpansionEvent<OutlineItem>) => {
+			expandedItems.delete(event.element);
+			updateButtonState();
+		})
+	);
+
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(editor => {
 			console.log('[TRACE] onDidChangeActiveTextEditor');
 			updateTreeViewMessage(editor);
+			
+			// Clear expanded items tracking when switching documents
+			expandedItems.clear();
 			
 			if (editor) {
 				console.log(`[TRACE] Editor activated: ${editor.document.languageId}`);
@@ -237,6 +277,9 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log('[TRACE] No editor active');
 				provider.refresh(undefined);
 			}
+			
+			// Update button state for new document (should show Expand All)
+			updateButtonState();
 		})
 	);
 
