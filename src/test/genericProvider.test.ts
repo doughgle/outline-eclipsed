@@ -367,3 +367,73 @@ Content here
 		}
 	});
 });
+
+suite('GenericOutlineProvider - Document Order', () => {
+	
+	suiteSetup(async () => {
+		await ensureMarkdownExtensionActivated();
+	});
+
+	test('Symbols should appear in document order, not alphabetical', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		// Create a markdown document with headings in non-alphabetical order
+		const content = `# Zebra
+## Apple
+# Banana
+## Cherry`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		await waitForDocumentSymbols(document);
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		// Verify we have items
+		assert.ok(rootItems.length >= 2, 'Should have at least 2 root items');
+		
+		// Verify items are in document order (Zebra before Banana)
+		// Find items by checking their line numbers are ascending
+		for (let i = 1; i < rootItems.length; i++) {
+			const prevLine = rootItems[i - 1].range.start.line;
+			const currLine = rootItems[i].range.start.line;
+			assert.ok(prevLine < currLine, 
+				`Items should be in document order: item at line ${prevLine} should come before item at line ${currLine}`);
+		}
+	});
+
+	test('Nested symbols should maintain document order', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		// Create a markdown document with nested headings in non-alphabetical order
+		const content = `# Parent
+## Zebra Child
+## Apple Child
+## Banana Child`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'markdown'
+		});
+		
+		await waitForDocumentSymbols(document);
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		// Check if we have a parent with children
+		if (rootItems.length > 0 && rootItems[0].children.length > 0) {
+			const children = rootItems[0].children;
+			
+			// Verify children are in document order
+			for (let i = 1; i < children.length; i++) {
+				const prevLine = children[i - 1].range.start.line;
+				const currLine = children[i].range.start.line;
+				assert.ok(prevLine < currLine, 
+					`Children should be in document order: child at line ${prevLine} should come before child at line ${currLine}`);
+			}
+		}
+	});
+});

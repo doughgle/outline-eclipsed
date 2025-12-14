@@ -55,16 +55,19 @@ export class GenericOutlineProvider extends OutlineProvider {
      * 
      * @param symbols - Array of DocumentSymbols with native hierarchy
      * @param document - The document containing these symbols
-     * @returns Array of root OutlineItems with nested children
+     * @returns Array of root OutlineItems with nested children in document order
      */
     protected convertDocumentSymbolsToOutlineItems(symbols: vscode.DocumentSymbol[], document: vscode.TextDocument): OutlineItem[] {
         const convertSymbol = (symbol: vscode.DocumentSymbol): OutlineItem => {
             const name = this.sanitizeSymbolName(symbol.name);
             const level = this.getLevelFromSymbol(symbol);
             
-            // Recursively convert children
+            // Recursively convert children, sorting them by document position
             const children = symbol.children 
-                ? symbol.children.map(child => convertSymbol(child))
+                ? symbol.children
+                    .slice() // Create a copy to avoid mutating the original
+                    .sort((a, b) => a.range.start.line - b.range.start.line)
+                    .map(child => convertSymbol(child))
                 : [];
             
             const item = new OutlineItem(
@@ -86,7 +89,9 @@ export class GenericOutlineProvider extends OutlineProvider {
             return item;
         };
         
-        return symbols.map(symbol => convertSymbol(symbol));
+        // Sort root symbols by document position before converting
+        const sortedSymbols = symbols.slice().sort((a, b) => a.range.start.line - b.range.start.line);
+        return sortedSymbols.map(symbol => convertSymbol(symbol));
     }
 
     /**
