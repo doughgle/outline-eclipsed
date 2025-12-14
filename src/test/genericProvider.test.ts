@@ -367,3 +367,91 @@ Content here
 		}
 	});
 });
+
+suite('GenericOutlineProvider - Document Order', () => {
+	
+	test('Symbols should appear in document order, not alphabetical', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		// Create a TypeScript document with symbols in non-alphabetical order
+		// TypeScript language server returns symbols in alphabetical order by default
+		const content = `export class Zebra {
+	constructor() {}
+}
+
+export class Banana {
+	constructor() {}
+}
+
+export class Apple {
+	constructor() {}
+}`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'typescript'
+		});
+		
+		await waitForDocumentSymbols(document);
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		// Verify we have exactly 3 root items (Zebra, Banana, Apple)
+		assert.strictEqual(rootItems.length, 3, 'Should have exactly 3 root items');
+		
+		// Verify items are in document order (Zebra, Banana, Apple) not alphabetical (Apple, Banana, Zebra)
+		assert.strictEqual(rootItems[0].label, 'Zebra', 'First item should be Zebra');
+		assert.strictEqual(rootItems[1].label, 'Banana', 'Second item should be Banana');
+		assert.strictEqual(rootItems[2].label, 'Apple', 'Third item should be Apple');
+		
+		// Also verify by line numbers (ascending order)
+		for (let i = 1; i < rootItems.length; i++) {
+			const prevLine = rootItems[i - 1].range.start.line;
+			const currLine = rootItems[i].range.start.line;
+			assert.ok(prevLine < currLine, 
+				`Items should be in document order: item at line ${prevLine} should come before item at line ${currLine}`);
+		}
+	});
+
+	test('Nested symbols should maintain document order', async () => {
+		const provider = new GenericOutlineProvider();
+		
+		// Create a TypeScript document with nested symbols in non-alphabetical order
+		const content = `export class Parent {
+	zebraMethod(): void {}
+	appleMethod(): void {}
+	bananaMethod(): void {}
+}`;
+		
+		const document = await vscode.workspace.openTextDocument({
+			content: content,
+			language: 'typescript'
+		});
+		
+		await waitForDocumentSymbols(document);
+		await provider.refresh(document);
+		const rootItems = provider.rootItems;
+		
+		// Check if we have a parent with children
+		assert.ok(rootItems.length > 0, 'Should have at least one root item');
+		assert.ok(rootItems[0].children.length > 0, 'Parent should have children');
+		
+		const children = rootItems[0].children;
+		
+		// Verify we have exactly 3 children (zebraMethod, appleMethod, bananaMethod)
+		assert.strictEqual(children.length, 3, 'Should have exactly 3 children');
+		
+		// Verify children are in document order, not alphabetical
+		assert.strictEqual(children[0].label, 'zebraMethod', 'First method should be zebraMethod');
+		assert.strictEqual(children[1].label, 'appleMethod', 'Second method should be appleMethod');
+		assert.strictEqual(children[2].label, 'bananaMethod', 'Third method should be bananaMethod');
+		
+		// Also verify by line numbers
+		for (let i = 1; i < children.length; i++) {
+			const prevLine = children[i - 1].range.start.line;
+			const currLine = children[i].range.start.line;
+			assert.ok(prevLine < currLine, 
+				`Children should be in document order: child at line ${prevLine} should come before child at line ${currLine}`);
+		}
+	});
+});
