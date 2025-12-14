@@ -53,16 +53,16 @@
     "commands": [
       {
         "command": "outlineEclipsed.gotoItem",
-        "title": "Go to Outline Item"
+        "title": "Outline Eclipsed: Go to Outline Item"
       },
       {
         "command": "outlineEclipsed.expandAll",
-        "title": "Expand All",
+        "title": "Outline Eclipsed: Expand All",
         "icon": "$(expand-all)"
       },
       {
         "command": "outlineEclipsed.collapseAll",
-        "title": "Collapse All",
+        "title": "Outline Eclipsed: Collapse All",
         "icon": "$(collapse-all)"
       }
     ],
