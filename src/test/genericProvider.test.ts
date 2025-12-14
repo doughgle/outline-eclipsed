@@ -392,8 +392,8 @@ suite('GenericOutlineProvider - Document Order', () => {
 		await provider.refresh(document);
 		const rootItems = provider.rootItems;
 		
-		// Verify we have items
-		assert.ok(rootItems.length >= 2, 'Should have at least 2 root items');
+		// Verify we have exactly 2 root items (# Zebra and # Banana)
+		assert.strictEqual(rootItems.length, 2, 'Should have exactly 2 root items');
 		
 		// Verify items are in document order (Zebra before Banana)
 		// Find items by checking their line numbers are ascending
@@ -426,6 +426,9 @@ suite('GenericOutlineProvider - Document Order', () => {
 		// Check if we have a parent with children
 		if (rootItems.length > 0 && rootItems[0].children.length > 0) {
 			const children = rootItems[0].children;
+			
+			// Verify we have exactly 3 children (Zebra Child, Apple Child, Banana Child)
+			assert.strictEqual(children.length, 3, 'Should have exactly 3 children');
 			
 			// Verify children are in document order
 			for (let i = 1; i < children.length; i++) {
