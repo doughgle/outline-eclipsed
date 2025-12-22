@@ -11,8 +11,9 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 test-fixtures
 .github/workflows/**
-docs
+docs*/**
 out/test
 *.svg
 **/*.log*
 logs/**
+.github/**
