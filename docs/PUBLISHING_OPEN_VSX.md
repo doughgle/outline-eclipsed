@@ -195,9 +195,12 @@ If you need to publish manually:
 - Regenerate the token if necessary
 
 ### Publishing succeeds but extension not visible
-- Check if publisher agreement is signed
-- Verify extension metadata (license, README, etc.)
-- Check Open VSX for any moderation requirements
+- **Wait for processing**: Newly published extensions may take a few minutes to appear in search results
+- **Check extension page directly**: Navigate to `https://open-vsx.org/extension/<publisher>/<extension-name>` to verify the extension exists
+- **Publisher agreement**: Verify the Eclipse Foundation Publisher Agreement is signed at [open-vsx.org](https://open-vsx.org/)
+- **Extension metadata**: Ensure required fields are complete (license, README, icon, etc.)
+- **Moderation queue**: In rare cases, extensions may require manual approval - check for emails from Open VSX team
+- **Visibility status**: Log in to Open VSX and check if the extension is marked as public/visible
 
 ## Resources
 
