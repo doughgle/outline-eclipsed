@@ -17,3 +17,4 @@ out/test
 **/*.log*
 logs/**
 .github/**
+node_modules
