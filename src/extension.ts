@@ -322,6 +322,8 @@ export function activate(context: vscode.ExtensionContext) {
 			if (editor) {
 				console.log(`[TRACE] Editor activated: ${editor.document.languageId}`);
 				await refreshWithTimeout(editor.document);
+				clearExpandedState('onDidChangeActiveTextEditor:editor-activated');
+				updateButtonState();
 				await applyInitialTreeState();
 				await syncTreeViewSelection(editor);
 			} else {
