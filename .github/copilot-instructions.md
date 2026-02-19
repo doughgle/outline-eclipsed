@@ -1,6 +1,6 @@
 ## Project Definition and Value Proposition
 
-For project definition and value proposition, refer to [Project Definition and Value Proposition](../README.md).
+For project definition and value proposition, refer to [Project Definition and Value Proposition](../README.md#outline-eclipsed).
 
 The primary value of this vscode extension is to enable developers to re-order symbols in documents using their outline.
 
