@@ -95,16 +95,7 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 - **Visual Feedback**: Verify editor auto-scrolls and highlights moved section
 - **Real-Time Updates**: Edit document, verify tree refreshes
 
-### [Roadmap](https://github.com/doughgle/outline-eclipsed/issues)
-
-- ✅ **PI-0–7**: Markdown outline, nested drag & drop, multi-select, enhanced highlights
-- ✅ **PI-8**: Multi-language outline viewing (JavaScript, TypeScript, Python) — drag & drop deferred
-- ✅ **PI-9**: Rich tree item descriptions and tooltips — line ranges and symbol information
-- ✅ **PI-10**: Read-only file protection — drag and drop disabled on git history files and other read-only documents
-- ✅ **PI-11**: Drag & drop for data/markup formats (JSON, HTML, CSS, XML)
-- 🔲 **PI-12**: Configuration options
-- 🔲 **PI-13**: Show outline for markdown preview when focused
-- 🔲 **PI-14**: Additional markdown symbols (code blocks, quotes)
+### [Roadmap](./docs/ROADMAP.md)
 
 ### License
 
