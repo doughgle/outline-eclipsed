@@ -286,7 +286,7 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// PI-13: Command to copy labels of selected outline items to clipboard
+	// PI-18: Command to copy labels of selected outline items to clipboard
 	const itemProcessor = new OutlineItemProcessor();
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.copyLabels', async () => {
@@ -295,11 +295,10 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 
-			const sorted = itemProcessor.sortItemsByPosition(selected);
-			const text = itemProcessor.extractLabels(sorted);
+			const text = itemProcessor.extractLabels(selected);
 
 			await vscode.env.clipboard.writeText(text);
-			logger.trace('copyLabels: copied labels to clipboard', { count: sorted.length });
+			logger.trace('copyLabels: copied labels to clipboard', { count: selected.length });
 		})
 	);
 
