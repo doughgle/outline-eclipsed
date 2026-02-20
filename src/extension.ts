@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { MultiLanguageOutlineProvider } from './multiLanguageOutlineProvider';
 import { TreeDragAndDropController } from './treeDragAndDropController';
 import { OutlineItem } from './outlineItem';
+import { initializeLogger, getLogger, readConfiguredLogLevel } from './logger';
 
 // Export tree view and provider for testing purposes (PI-2)
 export let outlineTreeView: vscode.TreeView<any> | undefined;
@@ -17,7 +18,19 @@ export let outlineProvider: MultiLanguageOutlineProvider | undefined;
  * @param context - The extension context provided by VS Code
  */
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Outline Eclipsed extension is activating');
+	const logger = initializeLogger('Outline Eclipsed', readConfiguredLogLevel('info'));
+	context.subscriptions.push(logger);
+
+	// Update log level when configuration changes at runtime
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(event => {
+			if (event.affectsConfiguration('outlineEclipsed.logLevel')) {
+				getLogger().setLevel(readConfiguredLogLevel('info'));
+			}
+		})
+	);
+
+	logger.info('Outline Eclipsed extension is activating');
 	const treeViewId = 'outlineEclipsed';
 
 	// Use multi-language provider that automatically switches between language-specific providers
@@ -47,11 +60,11 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			expandedItems.delete(item);
 		}
-		console.log(`[TRACE] expandedItems:${source}: ${expanded ? 'add' : 'delete'} ${describeItem(item)} size=${expandedItems.size}`);
+		logger.trace('expanded state changed', { source, action: expanded ? 'add' : 'delete', item: describeItem(item), size: expandedItems.size });
 	};
 	const clearExpandedState = (source: string): void => {
 		expandedItems.clear();
-		console.log(`[TRACE] expandedItems:${source}: clear size=${expandedItems.size}`);
+		logger.trace('expanded state cleared', { source, size: expandedItems.size });
 	};
 
 	const shouldAlwaysExpandOnOpen = (): boolean =>
@@ -63,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const hasExpandedItems = expandedItems.size > 0;
 		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canExpand', !hasExpandedItems);
 		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canCollapse', hasExpandedItems);
-		console.log(`[TRACE] updateButtonState: canExpand=${!hasExpandedItems} canCollapse=${hasExpandedItems} expandedItems=${expandedItems.size}`);
+		logger.trace('updateButtonState', { canExpand: !hasExpandedItems, canCollapse: hasExpandedItems, expandedItems: expandedItems.size });
 	};
 	
 	// Initialize button state - tree starts fully collapsed
@@ -160,13 +173,13 @@ export function activate(context: vscode.ExtensionContext) {
 	const expandItemRecursively = async (treeView: vscode.TreeView<OutlineItem>, item: OutlineItem): Promise<void> => {
 		if (item.children && item.children.length > 0) {
 			try {
-				console.log(`[TRACE] expandItemRecursively: reveal expand=true ${describeItem(item)}`);
+				logger.trace('expandItemRecursively: reveal expand=true', { item: describeItem(item) });
 				await treeView.reveal(item, { select: false, focus: false, expand: true });
 				setExpandedState(item, true, 'expandItemRecursively');
 				// Expand all children in parallel for better performance
 				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child)));
 			} catch (error) {
-				console.error(`[TRACE] expandItemRecursively: reveal failed ${describeItem(item)}`, error);
+				logger.error('expandItemRecursively: reveal failed', { item: describeItem(item), error: String(error) });
 			}
 		}
 	};
@@ -194,22 +207,22 @@ export function activate(context: vscode.ExtensionContext) {
 	// PI-12: Command to expand all nodes in the tree view
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.expandAll', async () => {
-			console.log('[TRACE] expandAll: command invoked');
+			logger.trace('expandAll: command invoked');
 			if (!treeView.visible) {
-				console.log('[TRACE] expandAll: tree view not visible, skipping');
+				logger.trace('expandAll: tree view not visible, skipping');
 				return;
 			}
 			
 			isApplyingTreeState = true;
 			try {
-				console.log(`[TRACE] expandAll: expanding ${provider.rootItems.length} root items`);
+				logger.trace('expandAll: expanding root items', { count: provider.rootItems.length });
 				clearExpandedState('expandAll:start');
 				// Expand all root items in parallel
 				await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
 				
 				// Update button state
 				updateButtonState();
-				console.log(`[TRACE] expandAll: complete, expandedItems=${expandedItems.size}`);
+				logger.trace('expandAll: complete', { expandedItems: expandedItems.size });
 			} finally {
 				isApplyingTreeState = false;
 			}
@@ -219,22 +232,22 @@ export function activate(context: vscode.ExtensionContext) {
 	// PI-12: Command to collapse all nodes in the tree view
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.collapseAll', async () => {
-			console.log('[TRACE] collapseAll: command invoked');
+			logger.trace('collapseAll: command invoked');
 			if (!treeView.visible) {
-				console.log('[TRACE] collapseAll: tree view not visible, skipping');
+				logger.trace('collapseAll: tree view not visible, skipping');
 				return;
 			}
 			
 			isApplyingTreeState = true;
 			try {
 				const collapseAllCommand = `workbench.actions.treeView.${treeViewId}.collapseAll`;
-				console.log(`[TRACE] collapseAll: executing ${collapseAllCommand}`);
+				logger.trace('collapseAll: executing', { command: collapseAllCommand });
 				await vscode.commands.executeCommand(collapseAllCommand);
 				clearExpandedState('collapseAll:post-command');
 				
 				// Update button state
 				updateButtonState();
-				console.log(`[TRACE] collapseAll: complete, expandedItems=${expandedItems.size}`);
+				logger.trace('collapseAll: complete', { expandedItems: expandedItems.size });
 			} finally {
 				isApplyingTreeState = false;
 			}
@@ -254,7 +267,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const syncTreeViewSelection = async (editor: vscode.TextEditor | undefined) => {
 		if (!editor) {
-			console.log('[TRACE] syncTreeViewSelection: no editor');
+			logger.trace('syncTreeViewSelection: no editor');
 			return;
 		}
 		
@@ -262,29 +275,29 @@ export function activate(context: vscode.ExtensionContext) {
 		// The reveal() API has a side effect: it auto-shows hidden tree views
 		// We respect the user's choice to hide/show the tree view
 		if (!treeView.visible) {
-			console.log('[TRACE] syncTreeViewSelection: tree view not visible, skipping');
+			logger.trace('syncTreeViewSelection: tree view not visible, skipping');
 			return;
 		}
 
 		if (isApplyingTreeState) {
-			console.log('[TRACE] syncTreeViewSelection: tree state operation in progress, skipping');
+			logger.trace('syncTreeViewSelection: tree state operation in progress, skipping');
 			return;
 		}
 		
 		const cursorLine = editor.selection.active.line;
-		console.log(`[TRACE] syncTreeViewSelection: finding item at line ${cursorLine}`);
+		logger.trace('syncTreeViewSelection: finding item', { line: cursorLine });
 		const item = provider.findItemAtLine(cursorLine);
 		
 		if (item) {
-			console.log(`[TRACE] syncTreeViewSelection: found item "${item.label}", calling reveal()`);
+			logger.trace('syncTreeViewSelection: found item, calling reveal()', { label: String(item.label) });
 			try {
 				await treeView.reveal(item, { select: true, focus: false, expand: false });
-				console.log(`[TRACE] syncTreeViewSelection: reveal() completed successfully`);
+				logger.trace('syncTreeViewSelection: reveal() completed successfully');
 			} catch (error) {
-				console.error(`[TRACE] syncTreeViewSelection: reveal() failed:`, error);
+				logger.error('syncTreeViewSelection: reveal() failed', { error: String(error) });
 			}
 		} else {
-			console.log(`[TRACE] syncTreeViewSelection: no item found at line ${cursorLine}`);
+			logger.trace('syncTreeViewSelection: no item found', { line: cursorLine });
 		}
 	};
 
@@ -292,10 +305,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		treeView.onDidExpandElement((event: vscode.TreeViewExpansionEvent<OutlineItem>) => {
 			if (isApplyingTreeState) {
-				console.log(`[TRACE] onDidExpandElement: ignored during apply ${describeItem(event.element)}`);
+				logger.trace('onDidExpandElement: ignored during apply', { item: describeItem(event.element) });
 				return;
 			}
-			console.log(`[TRACE] onDidExpandElement: ${describeItem(event.element)}`);
+			logger.trace('onDidExpandElement', { item: describeItem(event.element) });
 			setExpandedState(event.element, true, 'onDidExpandElement');
 			updateButtonState();
 		})
@@ -305,10 +318,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		treeView.onDidCollapseElement((event: vscode.TreeViewExpansionEvent<OutlineItem>) => {
 			if (isApplyingTreeState) {
-				console.log(`[TRACE] onDidCollapseElement: ignored during apply ${describeItem(event.element)}`);
+				logger.trace('onDidCollapseElement: ignored during apply', { item: describeItem(event.element) });
 				return;
 			}
-			console.log(`[TRACE] onDidCollapseElement: ${describeItem(event.element)}`);
+			logger.trace('onDidCollapseElement', { item: describeItem(event.element) });
 			setExpandedState(event.element, false, 'onDidCollapseElement');
 			updateButtonState();
 		})
@@ -316,18 +329,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(async editor => {
-			console.log('[TRACE] onDidChangeActiveTextEditor');
+			logger.trace('onDidChangeActiveTextEditor');
 			updateTreeViewMessage(editor);
 
 			if (editor) {
-				console.log(`[TRACE] Editor activated: ${editor.document.languageId}`);
+				logger.trace('editor activated', { languageId: editor.document.languageId });
 				await refreshWithTimeout(editor.document);
 				clearExpandedState('onDidChangeActiveTextEditor:editor-activated');
 				updateButtonState();
 				await applyInitialTreeState();
 				await syncTreeViewSelection(editor);
 			} else {
-				console.log('[TRACE] No editor active');
+				logger.trace('no editor active');
 				await provider.refresh(undefined);
 				clearExpandedState('onDidChangeActiveTextEditor:no-editor');
 				updateButtonState();
@@ -346,7 +359,7 @@ export function activate(context: vscode.ExtensionContext) {
 			// Check if diagnostics changed for the active document
 			const affectsActiveDoc = event.uris.some(uri => uri.toString() === editor.document.uri.toString());
 			if (affectsActiveDoc && provider.rootItems.length === 0) {
-				console.log(`[TRACE] Diagnostics changed for ${editor.document.languageId}, refreshing outline`);
+				logger.trace('diagnostics changed, refreshing outline', { languageId: editor.document.languageId });
 				refreshWithTimeout(editor.document);
 			}
 		})
@@ -355,7 +368,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.workspace.onDidChangeTextDocument(event => {
 			if (event.document === vscode.window.activeTextEditor?.document) {
-				console.log(`[TRACE] onDidChangeTextDocument: ${event.document.languageId}`);
+				logger.trace('onDidChangeTextDocument', { languageId: event.document.languageId });
 				provider.refresh(event.document);
 			}
 		})
@@ -363,7 +376,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(event => {
-			console.log(`[TRACE] onDidChangeTextEditorSelection: line ${event.textEditor.selection.active.line}`);
+			logger.trace('onDidChangeTextEditorSelection', { line: event.textEditor.selection.active.line });
 			syncTreeViewSelection(event.textEditor);
 		})
 	);
@@ -371,7 +384,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.workspace.onDidOpenTextDocument(document => {
 			if (document === vscode.window.activeTextEditor?.document) {
-				console.log(`[TRACE] onDidOpenTextDocument: ${document.languageId}`);
+				logger.trace('onDidOpenTextDocument', { languageId: document.languageId });
 				updateTreeViewMessage(vscode.window.activeTextEditor);
 				refreshWithTimeout(document);
 				// DON'T call syncTreeViewSelection here - it will be called by onDidChangeTextEditorSelection
@@ -383,7 +396,7 @@ export function activate(context: vscode.ExtensionContext) {
 	updateTreeViewMessage(vscode.window.activeTextEditor);
 	if (vscode.window.activeTextEditor) {
 		const initialEditor = vscode.window.activeTextEditor;
-		console.log(`[TRACE] Initial document detected: ${initialEditor.document.languageId}`);
+		logger.trace('initial document detected', { languageId: initialEditor.document.languageId });
 		void (async () => {
 			await refreshWithTimeout(initialEditor.document);
 			await applyInitialTreeState();
@@ -394,7 +407,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(treeView);
 	context.subscriptions.push(dragDropController);
 	
-	console.log('Outline Eclipsed extension activated successfully');
+	logger.info('Outline Eclipsed extension activated successfully');
 }
 
 /**
@@ -403,5 +416,6 @@ export function activate(context: vscode.ExtensionContext) {
  * Clean up resources if needed.
  */
 export function deactivate() {
-	console.log('Outline Eclipsed extension deactivated');
+	getLogger().info('Outline Eclipsed extension deactivated');
 }
+

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { OutlineProvider } from './outlineProvider';
 import { OutlineItem } from './outlineItem';
+import { getLogger } from './logger';
 
 /**
  * Generic outline provider that works with any language's symbol provider.
@@ -34,17 +35,17 @@ export class GenericOutlineProvider extends OutlineProvider {
             if (symbols.length > 0 && this.isDocumentSymbol(symbols[0])) {
                 // DocumentSymbol already has hierarchy - preserve it
                 const rootItems = this.convertDocumentSymbolsToOutlineItems(symbols as vscode.DocumentSymbol[], document);
-                console.log(`Parsed ${this.countTotalItems(rootItems)} symbols (${rootItems.length} root) from ${document.fileName}`);
+                getLogger().trace('parsed symbols', { total: this.countTotalItems(rootItems), root: rootItems.length, file: document.fileName });
                 return rootItems;
             } else {
                 // SymbolInformation is flat - need to build hierarchy
                 const flatItems = this.convertSymbolsToOutlineItems(symbols, document);
                 const rootItems = this.buildHierarchy(flatItems);
-                console.log(`Parsed ${flatItems.length} symbols (${rootItems.length} root) from ${document.fileName}`);
+                getLogger().trace('parsed symbols', { total: flatItems.length, root: rootItems.length, file: document.fileName });
                 return rootItems;
             }
         } catch (error) {
-            console.error('Failed to execute document symbol provider:', error);
+            getLogger().error('failed to execute document symbol provider', { error: String(error) });
             return [];
         }
     }

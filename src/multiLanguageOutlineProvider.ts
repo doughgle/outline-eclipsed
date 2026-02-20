@@ -3,6 +3,7 @@ import { OutlineProvider } from './outlineProvider';
 import { OutlineItem } from './outlineItem';
 import { MarkdownOutlineProvider } from './markdownOutlineProvider';
 import { GenericOutlineProvider } from './genericOutlineProvider';
+import { getLogger } from './logger';
 
 /**
  * Multi-language outline provider that delegates to language-specific providers.
@@ -54,7 +55,7 @@ export class MultiLanguageOutlineProvider extends OutlineProvider {
         // Check if we need to switch providers
         const languageId = document.languageId;
         if (languageId !== this.currentLanguageId) {
-            console.log(`Switching provider for language: ${languageId}`);
+            getLogger().trace('switching provider', { languageId });
             this.currentDelegate = this.createProviderForLanguage(languageId);
             this.currentLanguageId = languageId;
         }
