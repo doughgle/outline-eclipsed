@@ -127,6 +127,14 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
+	 * PI-19: Update the highlight duration at runtime (e.g. when configuration changes).
+	 * @param duration - Duration in milliseconds
+	 */
+	setHighlightDuration(duration: number): void {
+		this.highlightDuration = duration;
+	}
+
+	/**
 	 * PI-5/PI-6: Highlight the moved text temporarily and scroll to reveal it
 	 * Delegates to highlightMovedSections for consistent behavior
 	 */
