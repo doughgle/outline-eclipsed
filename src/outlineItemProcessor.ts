@@ -58,4 +58,15 @@ export class OutlineItemProcessor {
 			return a.range.start.line - b.range.start.line;
 		});
 	}
+
+	/**
+	 * Extract labels from items in the order provided.
+	 * Returns each label on its own line.
+	 *
+	 * @param items - Array of outline items
+	 * @returns Labels joined by newline
+	 */
+	extractLabels(items: OutlineItem[]): string {
+		return items.map(item => item.label).join('\n');
+	}
 }
