@@ -26,6 +26,22 @@ export const DRAG_DROP_SUPPORTED_LANGUAGES = [
 	'xml',
 ];
 
+/** PI-19: Minimum allowed highlight duration in milliseconds. */
+export const MIN_HIGHLIGHT_DURATION = 100;
+/** PI-19: Maximum allowed highlight duration in milliseconds. */
+export const MAX_HIGHLIGHT_DURATION = 5000;
+
+/**
+ * PI-19: Validate and clamp a highlight duration value.
+ * Returns `fallback` for non-finite values; clamps to [MIN, MAX] otherwise.
+ */
+function sanitizeHighlightDuration(duration: number, fallback: number): number {
+	if (!Number.isFinite(duration)) {
+		return fallback;
+	}
+	return Math.max(MIN_HIGHLIGHT_DURATION, Math.min(MAX_HIGHLIGHT_DURATION, duration));
+}
+
 /**
  * PI-3: TreeDragAndDropController
  * 
@@ -55,7 +71,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		transfer?: OutlineTransfer
 	) {
 		this.provider = provider;
-		this.highlightDuration = highlightDuration;
+		const sanitized = sanitizeHighlightDuration(highlightDuration, MIN_HIGHLIGHT_DURATION);
+		if (!Number.isFinite(highlightDuration)) {
+			getLogger().warn('PI-19: non-finite highlight duration, using minimum', { requested: highlightDuration, using: sanitized });
+		} else if (sanitized !== highlightDuration) {
+			getLogger().warn('PI-19: highlight duration clamped', { requested: highlightDuration, clamped: sanitized });
+		}
+		this.highlightDuration = sanitized;
 		
 		// Initialize collaborators (allow injection for testing)
 		this.textManipulator = textManipulator || new TextLineManipulator();
@@ -128,10 +150,17 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 	/**
 	 * PI-19: Update the highlight duration at runtime (e.g. when configuration changes).
-	 * @param duration - Duration in milliseconds
+	 * Guards against non-finite values and clamps to [MIN_HIGHLIGHT_DURATION, MAX_HIGHLIGHT_DURATION].
+	 * @param duration - Desired duration in milliseconds
 	 */
 	setHighlightDuration(duration: number): void {
-		this.highlightDuration = duration;
+		const sanitized = sanitizeHighlightDuration(duration, this.highlightDuration);
+		if (!Number.isFinite(duration)) {
+			getLogger().warn('PI-19: non-finite highlight duration ignored, keeping previous', { requested: duration, keeping: sanitized });
+		} else if (sanitized !== duration) {
+			getLogger().warn('PI-19: highlight duration clamped', { requested: duration, clamped: sanitized });
+		}
+		this.highlightDuration = sanitized;
 	}
 
 	/**

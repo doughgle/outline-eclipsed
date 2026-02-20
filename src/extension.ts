@@ -9,19 +9,20 @@ export let outlineTreeView: vscode.TreeView<any> | undefined;
 export let outlineProvider: MultiLanguageOutlineProvider | undefined;
 
 const DEFAULT_HIGHLIGHT_DURATION = 1500;
-const MIN_HIGHLIGHT_DURATION = 100;
-const MAX_HIGHLIGHT_DURATION = 5000;
 
 /**
  * PI-19: Read the configured highlight duration from VS Code workspace settings.
- * Falls back to `defaultDuration` when the setting is absent or out of range.
+ * Returns `defaultDuration` when the setting is absent or non-finite.
+ * Bounds enforcement (clamping) is delegated to TreeDragAndDropController.
  */
 function readConfiguredHighlightDuration(defaultDuration: number): number {
 	const configured = vscode.workspace
 		.getConfiguration('outlineEclipsed')
-		.get<number>('highlightDuration', defaultDuration);
-	const clamped = Math.max(MIN_HIGHLIGHT_DURATION, Math.min(MAX_HIGHLIGHT_DURATION, configured));
-	return clamped;
+		.get<number | undefined>('highlightDuration');
+	if (typeof configured !== 'number' || !Number.isFinite(configured)) {
+		return defaultDuration;
+	}
+	return configured;
 }
 
 /**
