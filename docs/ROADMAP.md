@@ -27,7 +27,7 @@
   - config option to keep comments/blank lines together with destination items. when dropping (e.g., if dropping between two items that each have comments/blank lines before them, keep those together with the dropped item) 
 - 🔲 **PI-16**: show outline for markdown preview when focused
 - 🔲 **PI-17**: add addition symbols for markdown e.g. code blocks, quotes
-- 🔲 **PI-18**: copy labels of multi-selected outline items to clipboard (currently only copies first item)
+- ✅ **PI-18**: copy labels of multi-selected outline items to clipboard
 - 🔲 **PI-19**: add vscode settings to customise highlights on moved sections.
 
 - 
@@ -93,3 +93,9 @@
 ### PI-10: Read-Only File Protection ✅
 - Disable drag and drop on read-only files
 - User-friendly error message when drop is attempted
+
+### PI-18: Copy Labels to Clipboard ✅
+- Select one or more outline items and press `Ctrl+C` / `Cmd+C` to copy their labels
+- Right-click context menu **Copy** option available in the tree view
+- Labels are copied in tree-view order, one per line
+- Works with any number of multi-selected items

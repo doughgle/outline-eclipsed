@@ -18,6 +18,7 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 - **Drag & Drop Reordering**: Drag symbols to reorder sections in Markdown, YAML, JSON, HTML, CSS, and XML files. Nested items move with their parent automatically.
 - **Bidirectional Sync**: Click a symbol to jump to that location. Move your cursor, and the tree highlights the current symbol.
+- **Copy Labels**: Select one or more outline items and press `Ctrl+C` (`Cmd+C` on Mac) or right-click and choose **Copy** to copy their labels to the clipboard — one label per line, in tree order.
 - **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
 - **Real-Time Updates**: The tree refreshes automatically as you edit the document.
 - **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
@@ -43,6 +44,7 @@ Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
 3. Click any symbol to navigate to that location
 4. Drag and drop symbols to reorganize sections
 5. Watch the editor highlight and scroll to show the moved content
+6. Select one or more symbols and press `Ctrl+C` (`Cmd+C`) to copy their labels to the clipboard
 
 ### Language Support
 
@@ -94,6 +96,7 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 - **Drag & Drop**: Drag a heading to reorder sections
 - **Visual Feedback**: Verify editor auto-scrolls and highlights moved section
 - **Real-Time Updates**: Edit document, verify tree refreshes
+- **Copy Labels**: Select multiple headings (`Ctrl+Click`), then press `Ctrl+C` — verify each label appears on its own line in the clipboard
 
 ### [Roadmap](./docs/ROADMAP.md)
 

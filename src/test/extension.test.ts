@@ -701,7 +701,7 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 
 });
 
-suite('PI-13: Copy Labels Tests', () => {
+suite('PI-18: Copy Labels Tests', () => {
 
 	test('CopyLabels command should be registered', async () => {
 		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
