@@ -3,6 +3,7 @@ import { OutlineItem } from './outlineItem';
 import { TextLineManipulator } from './textLineManipulator';
 import { OutlineItemProcessor } from './outlineItemProcessor';
 import { OutlineTransfer } from './outlineTransfer';
+import { getLogger } from './logger';
 
 /**
  * PI-11: Languages that support drag & drop reordering.
@@ -212,11 +213,11 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			
 			const sourceItem = this.findItemAtLine(document, sourceStartLine);
 			if (!sourceItem) {
-				console.error(`PI-4: Could not find source item at line ${sourceStartLine}`);
+				getLogger().error('PI-4: could not find source item', { line: sourceStartLine });
 				return false;
 			}
 
-			console.log(`PI-4: Moving section from lines ${sourceItem.range.start.line}-${sourceItem.range.end.line} to line ${targetLine}`);
+			getLogger().trace('PI-4: moving section', { from: sourceItem.range.start.line, to: sourceItem.range.end.line, target: targetLine });
 
 			// Convert to section format for calculateMovedText
 			const sectionsToMove = [{
@@ -243,10 +244,10 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				this.highlightMovedText(editor, movedRanges[0]);
 			}
 
-			console.log(`PI-4: Move operation ${success ? 'succeeded' : 'failed'}`);
+			getLogger().trace('PI-4: move operation', { success });
 			return success;
 		} catch (error) {
-			console.error('PI-4: Error moving section:', error);
+			getLogger().error('PI-4: error moving section', { error: String(error) });
 			return false;
 		}
 	}
@@ -268,12 +269,12 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	): Promise<boolean> {
 		try {
 			if (draggedItems.length === 0) {
-				console.log('PI-6: No items to move');
+				getLogger().trace('PI-6: no items to move');
 				return false;
 			}
 
 			const document = editor.document;
-			console.log(`PI-6: Moving ${draggedItems.length} sections to line ${targetLine}`);
+			getLogger().trace('PI-6: moving sections', { count: draggedItems.length, target: targetLine });
 			
 			// Items are already in correct format for calculateMovedText
 			const sectionsToMove = draggedItems.map(item => ({
@@ -281,7 +282,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				label: item.label
 			}));
 			
-			console.log(`PI-6: Source items: ${sectionsToMove.map(s => `${s.label}(${s.range.start.line}-${s.range.end.line})`).join(', ')}`);
+			getLogger().trace('PI-6: source items', { items: sectionsToMove.map(s => `${s.label}(${s.range.start.line}-${s.range.end.line})`).join(', ') });
 			
 			// Calculate new document content
 			const allLines = document.getText().split('\n');
@@ -301,13 +302,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			if (success) {
 				// Highlight all moved sections
 				this.highlightMovedSections(editor, movedRanges);
-				console.log(`PI-6: Successfully moved ${sectionsToMove.length} sections`);
+				getLogger().trace('PI-6: successfully moved sections', { count: sectionsToMove.length });
 			}
 
 			return success;
 			
 		} catch (error) {
-			console.error('PI-6: Error moving sections:', error);
+			getLogger().error('PI-6: error moving sections', { error: String(error) });
 			return false;
 		}
 	}
@@ -371,7 +372,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		}
 		
 		if (!targetHeading) {
-			console.error(`PI-4: No heading found at line ${lineNumber}`);
+			getLogger().error('PI-4: no heading found at line', { line: lineNumber });
 			return undefined;
 		}
 		
@@ -410,7 +411,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			document.lineAt(endLine).text.length
 		);
 		
-		console.log(`PI-4: Found item "${targetHeading.text}" at line ${targetHeading.line}, range extends to line ${endLine} (includes children)`);
+		getLogger().trace('PI-4: found item with range', { label: targetHeading.text, line: targetHeading.line, endLine });
 		
 		return new OutlineItem(targetHeading.text, targetHeading.level, range, selectionRange);
 	}
@@ -449,7 +450,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		// Only allow drag for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
 		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+			getLogger().trace('drag not supported for language', { languageId: editor?.document.languageId ?? 'unknown' });
 			return;
 		}
 		
@@ -479,7 +480,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		// Only allow drop for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
 		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-			console.log(`Drag and drop is not yet supported for ${editor?.document.languageId || 'this language'}`);
+			getLogger().trace('drop not supported for language', { languageId: editor?.document.languageId ?? 'unknown' });
 			return;
 		}
 		
@@ -495,13 +496,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		// Get the drag data
 		const transferItem = dataTransfer.get(this.transfer.mimeType);
 		if (!transferItem) {
-			console.log('PI-3: No drag data found');
+			getLogger().trace('PI-3: no drag data found');
 			return;
 		}
 
 		try {
 			const draggedItems = this.deserializeItems(transferItem.value as string);
-			console.log(`PI-3/PI-6: Drop operation - ${draggedItems.length} item(s) dropped`);
+			getLogger().trace('PI-3/PI-6: drop operation', { count: draggedItems.length });
 			
 			if (draggedItems.length === 0) {
 				return;
@@ -509,7 +510,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 			const editor = vscode.window.activeTextEditor;
 			if (!editor) {
-				console.error('PI-3: No active editor');
+				getLogger().error('PI-3: no active editor');
 				return;
 			}
 
@@ -518,11 +519,11 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			if (target) {
 				// Drop before the target item
 				targetLine = target.range.start.line;
-				console.log(`PI-3: Dropped before target: ${target.label} (line ${targetLine})`);
+				getLogger().trace('PI-3: dropped before target', { label: String(target.label), line: targetLine });
 			} else {
 				// Drop at end of document
 				targetLine = editor.document.lineCount;
-				console.log('PI-3: Dropped at end of document');
+				getLogger().trace('PI-3: dropped at end of document');
 			}
 
 			// PI-6: Execute the move (single or multiple items)
@@ -530,7 +531,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			await this.moveSections(editor, draggedItems, targetLine);
 			
 		} catch (error) {
-			console.error('Failed to parse drag data:', error);
+			getLogger().error('failed to parse drag data', { error: String(error) });
 		}
 	}
 }

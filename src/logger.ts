@@ -21,7 +21,7 @@ const LOG_LEVEL_ORDER: Record<LogLevel, number> = {
  * Log level is configurable at runtime. Each log entry is a JSON object with at
  * minimum `timestamp`, `level`, and `message` fields. Callers may supply an
  * additional `data` object whose own enumerable properties are merged into the
- * entry.
+ * entry. Built-in fields always take precedence over caller-supplied data.
  *
  * @example
  * const logger = new Logger('Outline Eclipsed', 'info');
@@ -56,10 +56,10 @@ export class Logger implements vscode.Disposable {
             return;
         }
         const entry: Record<string, unknown> = {
+            ...data,
             timestamp: new Date().toISOString(),
             level,
             message,
-            ...data,
         };
         this.outputChannel.appendLine(JSON.stringify(entry));
     }
@@ -95,6 +95,37 @@ export class Logger implements vscode.Disposable {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Module-level singleton
+// ---------------------------------------------------------------------------
+
+let _instance: Logger | undefined;
+
+/**
+ * Initialise the module-level logger singleton.
+ *
+ * Call once during extension activation. Returns the created logger so the
+ * caller can register it with `context.subscriptions` for automatic disposal.
+ */
+export function initializeLogger(channelName: string, level: LogLevel): Logger {
+    _instance = new Logger(channelName, level);
+    return _instance;
+}
+
+/**
+ * Return the module-level logger singleton.
+ *
+ * If the logger has not yet been initialised (e.g. in unit tests that
+ * exercise provider code directly), a default `info`-level logger is created
+ * lazily so callers never receive `undefined`.
+ */
+export function getLogger(): Logger {
+    if (!_instance) {
+        _instance = new Logger('Outline Eclipsed');
+    }
+    return _instance;
+}
+
 /**
  * Read the configured log level from VS Code workspace settings.
  * Falls back to `defaultLevel` when the setting is absent or invalid.
@@ -106,3 +137,4 @@ export function readConfiguredLogLevel(defaultLevel: LogLevel): LogLevel {
     const validLevels = Object.keys(LOG_LEVEL_ORDER) as LogLevel[];
     return validLevels.includes(configured as LogLevel) ? (configured as LogLevel) : defaultLevel;
 }
+
