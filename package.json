@@ -69,6 +69,13 @@
     "configuration": {
       "title": "Outline Eclipsed",
       "properties": {
+        "outlineEclipsed.highlightDuration": {
+          "type": "number",
+          "default": 1500,
+          "minimum": 100,
+          "maximum": 5000,
+          "description": "Duration in milliseconds (ms) to highlight moved sections. Minimum: 100 ms. Maximum: 5000 ms."
+        },
         "outlineEclipsed.logLevel": {
           "type": "string",
           "default": "info",

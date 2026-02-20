@@ -8,6 +8,23 @@ import { initializeLogger, getLogger, readConfiguredLogLevel } from './logger';
 export let outlineTreeView: vscode.TreeView<any> | undefined;
 export let outlineProvider: MultiLanguageOutlineProvider | undefined;
 
+const DEFAULT_HIGHLIGHT_DURATION = 1500;
+
+/**
+ * PI-19: Read the configured highlight duration from VS Code workspace settings.
+ * Returns `defaultDuration` when the setting is absent or not a number.
+ * Bounds enforcement and NaN guarding are delegated to TreeDragAndDropController.
+ */
+function readConfiguredHighlightDuration(defaultDuration: number): number {
+	const configured = vscode.workspace
+		.getConfiguration('outlineEclipsed')
+		.get<number | undefined>('highlightDuration');
+	if (typeof configured !== 'number') {
+		return defaultDuration;
+	}
+	return configured;
+}
+
 /**
  * Activates the Outline Eclipsed extension.
  * 
@@ -21,21 +38,24 @@ export function activate(context: vscode.ExtensionContext) {
 	const logger = initializeLogger('Outline Eclipsed', readConfiguredLogLevel('info'));
 	context.subscriptions.push(logger);
 
-	// Update log level when configuration changes at runtime
-	context.subscriptions.push(
-		vscode.workspace.onDidChangeConfiguration(event => {
-			if (event.affectsConfiguration('outlineEclipsed.logLevel')) {
-				getLogger().setLevel(readConfiguredLogLevel('info'));
-			}
-		})
-	);
-
 	logger.info('Outline Eclipsed extension is activating');
 	const treeViewId = 'outlineEclipsed';
 
 	// Use multi-language provider that automatically switches between language-specific providers
 	const provider = new MultiLanguageOutlineProvider();
-	const dragDropController = new TreeDragAndDropController(provider);
+	const dragDropController = new TreeDragAndDropController(provider, readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION));
+
+	// Update log level and highlight duration when configuration changes at runtime
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(event => {
+			if (event.affectsConfiguration('outlineEclipsed.logLevel')) {
+				getLogger().setLevel(readConfiguredLogLevel('info'));
+			}
+			if (event.affectsConfiguration('outlineEclipsed.highlightDuration')) {
+				dragDropController.setHighlightDuration(readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION));
+			}
+		})
+	);
 
 	const treeView = vscode.window.createTreeView(treeViewId, {
 		treeDataProvider: provider,
