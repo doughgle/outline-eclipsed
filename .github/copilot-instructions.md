@@ -16,5 +16,6 @@ For dev and test workflow, refer to [Development](../README.md#development).
 - When completing a new product increment (PI), always:
   - Add the feature to the **Features** section of `README.md`.
   - Update the **Usage** section of `README.md` with any new user-facing behaviour.
+  - Add a manual smoke test for the new feature to `docs/smoke-test.md`.
   - Mark the PI as ✅ complete in `docs/ROADMAP.md` (Next Product Increments list).
   - Add a PI detail section at the bottom of `docs/ROADMAP.md` describing what was delivered.
