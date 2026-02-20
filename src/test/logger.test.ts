@@ -136,6 +136,27 @@ suite('Logger: unit tests', () => {
 		assert.strictEqual(entry.context, 'test');
 	});
 
+	test('built-in fields cannot be overwritten by caller-supplied data', () => {
+		// Arrange
+		// This is a regression test: the old spread order was { timestamp, level, message, ...data }
+		// which allowed caller data to overwrite built-in fields.
+		// The fix changes the order to { ...data, timestamp, level, message } so built-in fields win.
+		logger = new Logger('Test', 'info');
+
+		// Act: pass data containing reserved keys that must NOT overwrite built-in values
+		logger.info('real message', {
+			level: 'trace',
+			message: 'spoofed message',
+			timestamp: '1970-01-01T00:00:00.000Z',
+		});
+
+		// Assert: built-in fields take precedence over caller-supplied data
+		const entry = JSON.parse(outputLines[0]);
+		assert.strictEqual(entry.level, 'info', 'caller-supplied level must not overwrite built-in level');
+		assert.strictEqual(entry.message, 'real message', 'caller-supplied message must not overwrite built-in message');
+		assert.notStrictEqual(entry.timestamp, '1970-01-01T00:00:00.000Z', 'caller-supplied timestamp must not overwrite built-in timestamp');
+	});
+
 	// --- Runtime level change ---
 
 	test('setLevel changes the active level at runtime', () => {
