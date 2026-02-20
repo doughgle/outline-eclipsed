@@ -97,6 +97,13 @@ Press **F5** to launch the Extension Development Host, then open `test-fixtures/
 
 ### [Roadmap](./docs/ROADMAP.md)
 
+### Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `outlineEclipsed.highlightDuration` | `1500` | Duration in milliseconds (ms) to highlight moved sections. Minimum: 100 ms. Maximum: 5000 ms. |
+| `outlineEclipsed.logLevel` | `"info"` | Controls the verbosity of Outline Eclipsed log output. One of: `off`, `error`, `warn`, `info`, `debug`, `trace`. |
+
 ### License
 
 MIT
