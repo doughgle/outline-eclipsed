@@ -396,6 +396,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(event => {
+			// BUGFIX: Filter out non-document editors (Output channels, debug consoles, etc.)
+			// to prevent feedback loops where logging triggers selection events
+			if (event.textEditor.document.uri.scheme !== 'file' && 
+			    event.textEditor.document.uri.scheme !== 'untitled') {
+				return;
+			}
 			logger.trace('onDidChangeTextEditorSelection', { line: event.textEditor.selection.active.line });
 			syncTreeViewSelection(event.textEditor);
 		})
