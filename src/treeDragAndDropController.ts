@@ -149,6 +149,14 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	}
 
 	/**
+	 * Returns the current highlight duration in milliseconds.
+	 * Useful for testing highlight duration configuration.
+	 */
+	getHighlightDuration(): number {
+		return this.highlightDuration;
+	}
+
+	/**
 	 * PI-19: Update the highlight duration at runtime (e.g. when configuration changes).
 	 * Guards against non-finite values and clamps to [MIN_HIGHLIGHT_DURATION, MAX_HIGHLIGHT_DURATION].
 	 * @param duration - Desired duration in milliseconds

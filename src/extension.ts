@@ -12,14 +12,14 @@ const DEFAULT_HIGHLIGHT_DURATION = 1500;
 
 /**
  * PI-19: Read the configured highlight duration from VS Code workspace settings.
- * Returns `defaultDuration` when the setting is absent or non-finite.
- * Bounds enforcement (clamping) is delegated to TreeDragAndDropController.
+ * Returns `defaultDuration` when the setting is absent or not a number.
+ * Bounds enforcement and NaN guarding are delegated to TreeDragAndDropController.
  */
 function readConfiguredHighlightDuration(defaultDuration: number): number {
 	const configured = vscode.workspace
 		.getConfiguration('outlineEclipsed')
 		.get<number | undefined>('highlightDuration');
-	if (typeof configured !== 'number' || !Number.isFinite(configured)) {
+	if (typeof configured !== 'number') {
 		return defaultDuration;
 	}
 	return configured;

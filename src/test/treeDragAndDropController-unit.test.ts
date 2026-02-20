@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { TreeDragAndDropController } from '../treeDragAndDropController';
+import { TreeDragAndDropController, MIN_HIGHLIGHT_DURATION, MAX_HIGHLIGHT_DURATION } from '../treeDragAndDropController';
 import { OutlineItem } from '../outlineItem';
 import { OutlineProvider } from '../outlineProvider';
 import { TextLineManipulator } from '../textLineManipulator';
@@ -308,6 +308,95 @@ suite('TreeDragAndDropController Unit Tests', () => {
 		// THEN: itemProcessor.filterRedundantItems should be called
 		assert.ok(mockItemProcessor.lastFilterCall);
 		assert.strictEqual(mockItemProcessor.lastFilterCall.length, 2);
+	});
+});
+
+suite('PI-19: TreeDragAndDropController - highlightDuration validation', () => {
+	test('constructor - clamps duration below minimum to MIN_HIGHLIGHT_DURATION', () => {
+		// GIVEN: A duration below the allowed minimum
+		const controller = new TreeDragAndDropController(undefined, MIN_HIGHLIGHT_DURATION - 1);
+
+		// THEN: Stored duration should be clamped to the minimum
+		assert.strictEqual(controller.getHighlightDuration(), MIN_HIGHLIGHT_DURATION);
+		controller.dispose();
+	});
+
+	test('constructor - clamps duration above maximum to MAX_HIGHLIGHT_DURATION', () => {
+		// GIVEN: A duration above the allowed maximum
+		const controller = new TreeDragAndDropController(undefined, MAX_HIGHLIGHT_DURATION + 1);
+
+		// THEN: Stored duration should be clamped to the maximum
+		assert.strictEqual(controller.getHighlightDuration(), MAX_HIGHLIGHT_DURATION);
+		controller.dispose();
+	});
+
+	test('constructor - accepts a valid in-range duration unchanged', () => {
+		// GIVEN: A valid duration within range
+		const valid = 2000;
+		const controller = new TreeDragAndDropController(undefined, valid);
+
+		// THEN: Stored duration should be exactly the provided value
+		assert.strictEqual(controller.getHighlightDuration(), valid);
+		controller.dispose();
+	});
+
+	test('constructor - replaces NaN with MIN_HIGHLIGHT_DURATION', () => {
+		// GIVEN: NaN passed as duration
+		const controller = new TreeDragAndDropController(undefined, NaN);
+
+		// THEN: Stored duration should be the minimum (non-finite fallback)
+		assert.strictEqual(controller.getHighlightDuration(), MIN_HIGHLIGHT_DURATION);
+		controller.dispose();
+	});
+
+	test('setHighlightDuration - clamps duration below minimum to MIN_HIGHLIGHT_DURATION', () => {
+		// GIVEN: A controller with a valid duration
+		const controller = new TreeDragAndDropController(undefined, 1500);
+
+		// WHEN: Setting a duration below the minimum
+		controller.setHighlightDuration(MIN_HIGHLIGHT_DURATION - 1);
+
+		// THEN: Duration should be clamped to the minimum
+		assert.strictEqual(controller.getHighlightDuration(), MIN_HIGHLIGHT_DURATION);
+		controller.dispose();
+	});
+
+	test('setHighlightDuration - clamps duration above maximum to MAX_HIGHLIGHT_DURATION', () => {
+		// GIVEN: A controller with a valid duration
+		const controller = new TreeDragAndDropController(undefined, 1500);
+
+		// WHEN: Setting a duration above the maximum
+		controller.setHighlightDuration(MAX_HIGHLIGHT_DURATION + 1);
+
+		// THEN: Duration should be clamped to the maximum
+		assert.strictEqual(controller.getHighlightDuration(), MAX_HIGHLIGHT_DURATION);
+		controller.dispose();
+	});
+
+	test('setHighlightDuration - ignores NaN and keeps previous duration', () => {
+		// GIVEN: A controller with a known valid duration
+		const previousDuration = 2500;
+		const controller = new TreeDragAndDropController(undefined, previousDuration);
+
+		// WHEN: Setting NaN as the new duration
+		controller.setHighlightDuration(NaN);
+
+		// THEN: Previous duration should be preserved
+		assert.strictEqual(controller.getHighlightDuration(), previousDuration);
+		controller.dispose();
+	});
+
+	test('setHighlightDuration - ignores Infinity and keeps previous duration', () => {
+		// GIVEN: A controller with a known valid duration
+		const previousDuration = 2500;
+		const controller = new TreeDragAndDropController(undefined, previousDuration);
+
+		// WHEN: Setting Infinity as the new duration
+		controller.setHighlightDuration(Infinity);
+
+		// THEN: Previous duration should be preserved
+		assert.strictEqual(controller.getHighlightDuration(), previousDuration);
+		controller.dispose();
 	});
 });
 
