@@ -64,6 +64,10 @@
         "command": "outlineEclipsed.collapseAll",
         "title": "Outline Eclipsed: Collapse All",
         "icon": "$(collapse-all)"
+      },
+      {
+        "command": "outlineEclipsed.copyLabels",
+        "title": "Copy"
       }
     ],
     "configuration": {
@@ -104,8 +108,23 @@
           "when": "view == outlineEclipsed && outlineEclipsed.canCollapse",
           "group": "navigation"
         }
+      ],
+      "view/item/context": [
+        {
+          "command": "outlineEclipsed.copyLabels",
+          "when": "view == outlineEclipsed",
+          "group": "9_cutcopypaste"
+        }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "outlineEclipsed.copyLabels",
+        "key": "ctrl+c",
+        "mac": "cmd+c",
+        "when": "focusedView == outlineEclipsed"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

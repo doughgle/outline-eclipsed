@@ -267,4 +267,78 @@ suite('OutlineItemProcessor Unit Tests', () => {
 		assert.strictEqual(result.length, 1, 'Child should be filtered out');
 		assert.strictEqual(result[0], parent, 'Parent should remain');
 	});
+
+	test('extractLabels - empty array returns empty string', () => {
+		// WHEN: Extracting labels from empty array
+		const result = processor.extractLabels([]);
+
+		// THEN: Should return empty string
+		assert.strictEqual(result, '');
+	});
+
+	test('extractLabels - single item returns its label', () => {
+		// GIVEN: Single item
+		const item = new OutlineItem(
+			'Section 1',
+			1,
+			new vscode.Range(0, 0, 5, 0),
+			new vscode.Range(0, 0, 0, 9)
+		);
+
+		// WHEN: Extracting labels
+		const result = processor.extractLabels([item]);
+
+		// THEN: Should return just the label
+		assert.strictEqual(result, 'Section 1');
+	});
+
+	test('extractLabels - multiple items returns labels joined by newline', () => {
+		// GIVEN: Two items
+		const item1 = new OutlineItem(
+			'Section 1',
+			1,
+			new vscode.Range(0, 0, 5, 0),
+			new vscode.Range(0, 0, 0, 9)
+		);
+		const item2 = new OutlineItem(
+			'Section 2',
+			1,
+			new vscode.Range(6, 0, 10, 0),
+			new vscode.Range(6, 0, 6, 9)
+		);
+
+		// WHEN: Extracting labels
+		const result = processor.extractLabels([item1, item2]);
+
+		// THEN: Labels should be newline-separated
+		assert.strictEqual(result, 'Section 1\nSection 2');
+	});
+
+	test('extractLabels - preserves order of input items', () => {
+		// GIVEN: Three items in order
+		const item1 = new OutlineItem(
+			'First',
+			1,
+			new vscode.Range(0, 0, 5, 0),
+			new vscode.Range(0, 0, 0, 5)
+		);
+		const item2 = new OutlineItem(
+			'Second',
+			1,
+			new vscode.Range(6, 0, 10, 0),
+			new vscode.Range(6, 0, 6, 6)
+		);
+		const item3 = new OutlineItem(
+			'Third',
+			1,
+			new vscode.Range(11, 0, 15, 0),
+			new vscode.Range(11, 0, 11, 5)
+		);
+
+		// WHEN: Extracting labels
+		const result = processor.extractLabels([item1, item2, item3]);
+
+		// THEN: Labels should appear in input order
+		assert.strictEqual(result, 'First\nSecond\nThird');
+	});
 });

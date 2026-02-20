@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { MultiLanguageOutlineProvider } from './multiLanguageOutlineProvider';
 import { TreeDragAndDropController } from './treeDragAndDropController';
 import { OutlineItem } from './outlineItem';
+import { OutlineItemProcessor } from './outlineItemProcessor';
 import { initializeLogger, getLogger, readConfiguredLogLevel } from './logger';
 
 // Export tree view and provider for testing purposes (PI-2)
@@ -282,6 +283,23 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			
 			return await dragDropController.moveSection(editor, sourceStartLine, targetLine);
+		})
+	);
+
+	// PI-13: Command to copy labels of selected outline items to clipboard
+	const itemProcessor = new OutlineItemProcessor();
+	context.subscriptions.push(
+		vscode.commands.registerCommand('outlineEclipsed.copyLabels', async () => {
+			const selected = [...treeView.selection];
+			if (selected.length === 0) {
+				return;
+			}
+
+			const sorted = itemProcessor.sortItemsByPosition(selected);
+			const text = itemProcessor.extractLabels(sorted);
+
+			await vscode.env.clipboard.writeText(text);
+			logger.trace('copyLabels: copied labels to clipboard', { count: sorted.length });
 		})
 	);
 

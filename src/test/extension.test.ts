@@ -700,3 +700,35 @@ suite('PI-9: Description and Tooltip Integration Tests', () => {
 	});
 
 });
+
+suite('PI-13: Copy Labels Tests', () => {
+
+	test('CopyLabels command should be registered', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+
+		const commands = await vscode.commands.getCommands(true);
+		const hasCopyCommand = commands.includes('outlineEclipsed.copyLabels');
+
+		assert.ok(hasCopyCommand, 'outlineEclipsed.copyLabels command should be registered');
+	});
+
+	test('CopyLabels command should run without error on empty selection', async () => {
+		const extension = vscode.extensions.getExtension('douglashellinger.outline-eclipsed');
+		await extension?.activate();
+
+		const document = await vscode.workspace.openTextDocument({
+			content: '# Heading 1\n\n## Heading 2\n\nContent',
+			language: 'markdown'
+		});
+
+		await vscode.window.showTextDocument(document);
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		// Execute the command (no items selected - should not throw)
+		await vscode.commands.executeCommand('outlineEclipsed.copyLabels');
+
+		// Extension should still be active after command runs with no selection
+		assert.strictEqual(extension?.isActive, true, 'Extension should remain active');
+	});
+});
