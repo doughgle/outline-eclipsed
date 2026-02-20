@@ -66,6 +66,25 @@
         "icon": "$(collapse-all)"
       }
     ],
+    "configuration": {
+      "title": "Outline Eclipsed",
+      "properties": {
+        "outlineEclipsed.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["off", "error", "warn", "info", "debug", "trace"],
+          "enumDescriptions": [
+            "Disable all logging",
+            "Log errors only",
+            "Log errors and warnings",
+            "Log errors, warnings, and informational messages (default)",
+            "Log errors, warnings, informational, and debug messages",
+            "Log everything including trace messages"
+          ],
+          "description": "Controls the verbosity of Outline Eclipsed log output."
+        }
+      }
+    },
     "menus": {
       "view/title": [
         {
