@@ -45,6 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Use multi-language provider that automatically switches between language-specific providers
 	const provider = new MultiLanguageOutlineProvider();
 	const dragDropController = new TreeDragAndDropController(provider, readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION));
+	const itemProcessor = new OutlineItemProcessor();
 
 	// Update log level and highlight duration when configuration changes at runtime
 	context.subscriptions.push(
@@ -287,7 +288,6 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	// PI-18: Command to copy labels of selected outline items to clipboard
-	const itemProcessor = new OutlineItemProcessor();
 	context.subscriptions.push(
 		vscode.commands.registerCommand('outlineEclipsed.copyLabels', async () => {
 			const selected = [...treeView.selection];
@@ -297,8 +297,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const text = itemProcessor.extractLabels(selected);
 
-			await vscode.env.clipboard.writeText(text);
-			logger.trace('copyLabels: copied labels to clipboard', { count: selected.length });
+			try {
+				await vscode.env.clipboard.writeText(text);
+				logger.trace('copyLabels: copied labels to clipboard', { count: selected.length });
+			} catch (error) {
+				logger.error('copyLabels: failed to write to clipboard', { error: String(error) });
+			}
 		})
 	);
 
