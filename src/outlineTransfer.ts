@@ -1,6 +1,20 @@
 import * as vscode from 'vscode';
 import { OutlineItem } from './outlineItem';
 
+/** Shape of a serialized outline item used in drag-and-drop data transfer. */
+interface SerializedItem {
+	label: string;
+	level: number;
+	range: {
+		start: { line: number; character: number };
+		end: { line: number; character: number };
+	};
+	selectionRange: {
+		start: { line: number; character: number };
+		end: { line: number; character: number };
+	};
+}
+
 /**
  * Handles serialization and deserialization of outline items for drag-and-drop transfer.
  * Manages MIME type and JSON conversion of items with Range objects.
@@ -48,7 +62,7 @@ export class OutlineTransfer {
 	deserialize(json: string): Array<{ range: vscode.Range; label: string; level: number }> {
 		const parsed = JSON.parse(json);
 		
-		return parsed.map((itemData: any) => ({
+		return parsed.map((itemData: SerializedItem) => ({
 			range: new vscode.Range(
 				itemData.range.start.line,
 				itemData.range.start.character,
