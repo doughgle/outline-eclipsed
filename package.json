@@ -38,7 +38,6 @@
     "navigation",
     "symbols"
   ],
-  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "views": {

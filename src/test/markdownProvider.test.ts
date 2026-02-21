@@ -622,7 +622,7 @@ Content`;
 		assert.ok(allItems[2].label.startsWith(''), 'Third item should be placeholder');
 		
 		// Placeholder should be marked as such
-		assert.strictEqual((allItems[2] as any).isPlaceholder, true, 'Should be marked as placeholder');
+		assert.strictEqual(allItems[2].isPlaceholder, true, 'Should be marked as placeholder');
 		
 		// Placeholder should have no icon
 		assert.strictEqual(allItems[2].iconPath, undefined, 'Placeholder should have no icon');
@@ -640,7 +640,7 @@ Content`;
 		
 		// Should have 1 placeholder even with no headings
 		assert.strictEqual(allItems.length, 1, 'Should have 1 placeholder');
-		assert.strictEqual((allItems[0] as any).isPlaceholder, true);
+		assert.strictEqual(allItems[0].isPlaceholder, true);
 		assert.strictEqual(allItems[0].iconPath, undefined, 'Placeholder should have no icon');
 	});
 

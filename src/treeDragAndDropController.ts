@@ -43,6 +43,14 @@ function sanitizeHighlightDuration(duration: number, fallback: number): number {
 }
 
 /**
+ * Minimal interface for locating outline items by line number.
+ * Used by TreeDragAndDropController to look up provider state without a circular import.
+ */
+interface OutlineItemLocator {
+	findItemAtLine(lineNumber: number): OutlineItem | undefined;
+}
+
+/**
  * PI-3: TreeDragAndDropController
  * 
  * Handles drag and drop operations for the outline tree view.
@@ -55,7 +63,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 
 	private highlightDecorationType: vscode.TextEditorDecorationType;
 	private highlightTimeout: NodeJS.Timeout | undefined;
-	private provider: any; // OutlineProvider - using any to avoid circular import
+	private provider: OutlineItemLocator | undefined;
 	private highlightDuration: number;
 	
 	// Collaborators for testability
@@ -64,7 +72,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	private transfer: OutlineTransfer;
 
 	constructor(
-		provider?: any,
+		provider?: OutlineItemLocator,
 		highlightDuration: number = 1500,
 		textManipulator?: TextLineManipulator,
 		itemProcessor?: OutlineItemProcessor,
@@ -364,7 +372,7 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	 */
 	private findItemAtLine(document: vscode.TextDocument, lineNumber: number): OutlineItem | undefined {
 		// Use provider's already-parsed outline if available (respects code blocks)
-		if (this.provider && this.provider.findItemAtLine) {
+		if (this.provider) {
 			const item = this.provider.findItemAtLine(lineNumber);
 			if (item) {
 				return item;

@@ -233,6 +233,12 @@ export class OutlineItem extends vscode.TreeItem {
      */
     public parent: OutlineItem | undefined;
 
+    /** Marks this item as a placeholder drop zone at the end of the tree. */
+    public isPlaceholder?: boolean;
+
+    /** Marks this item as a read-only warning indicator at the top of the tree. */
+    public isReadOnlyWarning?: boolean;
+
     /**
      * Creates an outline item
      * @param label - Display text for the item
