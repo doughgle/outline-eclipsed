@@ -22,7 +22,9 @@ export class GenericOutlineProvider extends OutlineProvider {
     protected async parseDocument(document: vscode.TextDocument): Promise<OutlineItem[]> {
         try {
             // Use built-in symbol parser via executeDocumentSymbolProvider
-            const symbols = await vscode.commands.executeCommand<(vscode.SymbolInformation | vscode.DocumentSymbol)[]>(
+            const symbols = await vscode.commands.executeCommand<
+                (vscode.SymbolInformation | vscode.DocumentSymbol)[]
+            >(
                 'vscode.executeDocumentSymbolProvider',
                 document.uri
             );
@@ -33,19 +35,26 @@ export class GenericOutlineProvider extends OutlineProvider {
 
             // Check if we got DocumentSymbols (hierarchical) or SymbolInformation (flat)
             if (symbols.length > 0 && this.isDocumentSymbol(symbols[0])) {
-                // DocumentSymbol already has hierarchy - preserve it
-                const rootItems = this.convertDocumentSymbolsToOutlineItems(symbols as vscode.DocumentSymbol[], document);
-                getLogger().trace('parsed symbols', { total: this.countTotalItems(rootItems), root: rootItems.length, file: document.fileName });
+                const rootItems = this.convertDocumentSymbolsToOutlineItems(
+                    symbols as vscode.DocumentSymbol[], document
+                );
+                getLogger().trace('parsed symbols', {
+                    total: this.countTotalItems(rootItems),
+                    root: rootItems.length, file: document.fileName
+                });
                 return rootItems;
             } else {
-                // SymbolInformation is flat - need to build hierarchy
                 const flatItems = this.convertSymbolsToOutlineItems(symbols, document);
                 const rootItems = this.buildHierarchy(flatItems);
-                getLogger().trace('parsed symbols', { total: flatItems.length, root: rootItems.length, file: document.fileName });
+                getLogger().trace('parsed symbols', {
+                    total: flatItems.length, root: rootItems.length, file: document.fileName
+                });
                 return rootItems;
             }
         } catch (error) {
-            getLogger().error('failed to execute document symbol provider', { error: String(error) });
+            getLogger().error('failed to execute document symbol provider', {
+                error: String(error)
+            });
             return [];
         }
     }
@@ -58,7 +67,9 @@ export class GenericOutlineProvider extends OutlineProvider {
      * @param document - The document containing these symbols
      * @returns Array of root OutlineItems with nested children in document order
      */
-    protected convertDocumentSymbolsToOutlineItems(symbols: vscode.DocumentSymbol[], document: vscode.TextDocument): OutlineItem[] {
+    protected convertDocumentSymbolsToOutlineItems(
+        symbols: vscode.DocumentSymbol[], document: vscode.TextDocument
+    ): OutlineItem[] {
         const convertSymbol = (symbol: vscode.DocumentSymbol): OutlineItem => {
             const name = this.sanitizeSymbolName(symbol.name);
             const level = this.getLevelFromSymbol(symbol);
@@ -90,8 +101,9 @@ export class GenericOutlineProvider extends OutlineProvider {
             return item;
         };
         
-        // Sort root symbols by document position before converting
-        const sortedSymbols = symbols.slice().sort((a, b) => a.range.start.line - b.range.start.line);
+        const sortedSymbols = symbols
+            .slice()
+            .sort((a, b) => a.range.start.line - b.range.start.line);
         return sortedSymbols.map(symbol => convertSymbol(symbol));
     }
 
@@ -180,7 +192,9 @@ export class GenericOutlineProvider extends OutlineProvider {
      * @param symbol - Symbol to check
      * @returns True if symbol is DocumentSymbol
      */
-    protected isDocumentSymbol(symbol: vscode.SymbolInformation | vscode.DocumentSymbol): symbol is vscode.DocumentSymbol {
+    protected isDocumentSymbol(
+        symbol: vscode.SymbolInformation | vscode.DocumentSymbol
+    ): symbol is vscode.DocumentSymbol {
         return 'range' in symbol;
     }
 
@@ -270,7 +284,8 @@ export class GenericOutlineProvider extends OutlineProvider {
         const stack: OutlineItem[] = [];
         
         for (const item of flatItems) {
-            // Pop items from stack until we find a valid parent (lower level number = higher in hierarchy)
+            // Pop items from stack until we find a valid parent
+            // (lower level number = higher in hierarchy)
             while (stack.length > 0 && stack[stack.length - 1].level >= item.level) {
                 stack.pop();
             }

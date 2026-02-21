@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 
+/** Maximum number of characters for inline value descriptions shown in the tree. */
+const MAX_DESCRIPTION_LENGTH = 50;
+
 /**
  * Maps VS Code SymbolKind to the corresponding ThemeIcon id.
  * Uses VS Code's built-in symbol icon names.
@@ -77,8 +80,8 @@ function extractValueDescription(
         // Clean up the detail: truncate and ensure single line
         let detail = symbolDetail.trim();
         detail = detail.replace(/\n.*/g, '').trim();
-        if (detail.length > 50) {
-            detail = detail.substring(0, 47) + '...';
+        if (detail.length > MAX_DESCRIPTION_LENGTH) {
+            detail = detail.substring(0, MAX_DESCRIPTION_LENGTH - 3) + '...';
         }
         return detail;
     }
@@ -140,8 +143,8 @@ function extractDataValue(
             value = value.replace(/[,;{}\[\]]+$/, '').trim();
             // Truncate to reasonable length and ensure single line
             value = value.replace(/\n.*/g, '').trim();
-            if (value.length > 50) {
-                value = value.substring(0, 47) + '...';
+            if (value.length > MAX_DESCRIPTION_LENGTH) {
+                value = value.substring(0, MAX_DESCRIPTION_LENGTH - 3) + '...';
             }
             return value;
         }
@@ -176,8 +179,8 @@ function extractConstantValue(
             // Ensure single line
             value = value.replace(/\n.*/g, '').trim();
             // Truncate if too long
-            if (value.length > 50) {
-                value = value.substring(0, 47) + '...';
+            if (value.length > MAX_DESCRIPTION_LENGTH) {
+                value = value.substring(0, MAX_DESCRIPTION_LENGTH - 3) + '...';
             }
             return value;
         }
@@ -197,7 +200,9 @@ function extractConstantValue(
  * @param symbolKind - Optional symbol kind
  * @returns MarkdownString for tooltip
  */
-function createTooltip(label: string, range: vscode.Range, symbolKind?: vscode.SymbolKind): vscode.MarkdownString {
+function createTooltip(
+    label: string, range: vscode.Range, symbolKind?: vscode.SymbolKind
+): vscode.MarkdownString {
     const startLine = range.start.line + 1;
     const endLine = range.end.line + 1;
     
