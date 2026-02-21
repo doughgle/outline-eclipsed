@@ -157,7 +157,7 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         warningItem.command = undefined;
         
         // Mark as warning for identification
-        (warningItem as any).isReadOnlyWarning = true;
+        warningItem.isReadOnlyWarning = true;
         warningItem.contextValue = 'readOnlyWarning';
         
         return warningItem;
@@ -194,7 +194,7 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         placeholder.iconPath = undefined;
         
         // Mark as placeholder for identification
-        (placeholder as any).isPlaceholder = true;
+        placeholder.isPlaceholder = true;
         
         return [placeholder];
     }

@@ -6,7 +6,7 @@ import { OutlineItemProcessor } from './outlineItemProcessor';
 import { initializeLogger, getLogger, readConfiguredLogLevel } from './logger';
 
 // Export tree view and provider for testing purposes (PI-2)
-export let outlineTreeView: vscode.TreeView<any> | undefined;
+export let outlineTreeView: vscode.TreeView<OutlineItem> | undefined;
 export let outlineProvider: MultiLanguageOutlineProvider | undefined;
 
 const DEFAULT_HIGHLIGHT_DURATION = 1500;
