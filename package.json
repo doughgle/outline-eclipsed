@@ -2,7 +2,7 @@
   "name": "outline-eclipsed",
   "displayName": "Outline Eclipsed",
   "description": "An outline view for VS Code that lets you drag and drop to reorganize your document structure. Supports multiple languages.",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "publisher": "douglashellinger",
   "icon": "icon.png",
   "author": {
@@ -83,7 +83,14 @@
         "outlineEclipsed.logLevel": {
           "type": "string",
           "default": "info",
-          "enum": ["off", "error", "warn", "info", "debug", "trace"],
+          "enum": [
+            "off",
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
           "enumDescriptions": [
             "Disable all logging",
             "Log errors only",
