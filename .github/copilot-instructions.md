@@ -12,6 +12,10 @@ For dev and test workflow, refer to [Development](../README.md#development).
 - Before asking review, run all tests and ensure they PASS *after* making code changes.
 - Don't use `--silent` on `npm run`.
   
+- At the start of a new pull request, checkout the code and run all tests. Tests should PASS *before* making code changes. If not, call human.
+- Before asking review, run all tests and ensure they PASS *after* making code changes.
+- Don't use `--silent` on `npm run`.
+  
 ## Feature Documentation
 
 - When completing a new product increment (PI), always:
@@ -22,5 +26,6 @@ For dev and test workflow, refer to [Development](../README.md#development).
   - Add a PI detail section at the bottom of `docs/ROADMAP.md` describing what was delivered.
 
 ## Agent Meta Instructions
+When updating agent instructions, always:
 - Standardize on `AGENTS.md` in repo root as the source of instructions.
 - Ensure instructions are clear and token efficient for an LLM.
