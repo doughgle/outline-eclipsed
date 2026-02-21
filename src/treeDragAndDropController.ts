@@ -42,6 +42,13 @@ function sanitizeHighlightDuration(duration: number, fallback: number): number {
 	return Math.max(MIN_HIGHLIGHT_DURATION, Math.min(MAX_HIGHLIGHT_DURATION, duration));
 }
 
+/** Shape of a markdown heading parsed from document text during the fallback item lookup. */
+interface HeadingInfo {
+	line: number;
+	level: number;
+	text: string;
+}
+
 /**
  * Minimal interface for locating outline items by line number.
  * Used by TreeDragAndDropController to look up provider state without a circular import.
@@ -381,12 +388,6 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		
 		// Fallback: Parse with code block detection
 		// This respects code blocks when finding headings
-		interface HeadingInfo {
-			line: number;
-			level: number;
-			text: string;
-		}
-		
 		const headings: HeadingInfo[] = [];
 		let inCodeBlock = false;
 		
