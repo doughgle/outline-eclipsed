@@ -200,7 +200,9 @@ function extractConstantValue(
  * @param symbolKind - Optional symbol kind
  * @returns MarkdownString for tooltip
  */
-function createTooltip(label: string, range: vscode.Range, symbolKind?: vscode.SymbolKind): vscode.MarkdownString {
+function createTooltip(
+    label: string, range: vscode.Range, symbolKind?: vscode.SymbolKind
+): vscode.MarkdownString {
     const startLine = range.start.line + 1;
     const endLine = range.end.line + 1;
     

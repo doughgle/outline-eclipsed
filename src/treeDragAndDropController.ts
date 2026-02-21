@@ -88,9 +88,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		this.provider = provider;
 		const sanitized = sanitizeHighlightDuration(highlightDuration, MIN_HIGHLIGHT_DURATION);
 		if (!Number.isFinite(highlightDuration)) {
-			getLogger().warn('PI-19: non-finite highlight duration, using minimum', { requested: highlightDuration, using: sanitized });
+			getLogger().warn('PI-19: non-finite highlight duration, using minimum', {
+				requested: highlightDuration, using: sanitized
+			});
 		} else if (sanitized !== highlightDuration) {
-			getLogger().warn('PI-19: highlight duration clamped', { requested: highlightDuration, clamped: sanitized });
+			getLogger().warn('PI-19: highlight duration clamped', {
+				requested: highlightDuration, clamped: sanitized
+			});
 		}
 		this.highlightDuration = sanitized;
 		
@@ -179,9 +183,13 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	setHighlightDuration(duration: number): void {
 		const sanitized = sanitizeHighlightDuration(duration, this.highlightDuration);
 		if (!Number.isFinite(duration)) {
-			getLogger().warn('PI-19: non-finite highlight duration ignored, keeping previous', { requested: duration, keeping: sanitized });
+			getLogger().warn('PI-19: non-finite highlight duration ignored, keeping previous', {
+				requested: duration, keeping: sanitized
+			});
 		} else if (sanitized !== duration) {
-			getLogger().warn('PI-19: highlight duration clamped', { requested: duration, clamped: sanitized });
+			getLogger().warn('PI-19: highlight duration clamped', {
+				requested: duration, clamped: sanitized
+			});
 		}
 		this.highlightDuration = sanitized;
 	}
@@ -255,7 +263,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	 * @param json - JSON string from data transfer
 	 * @returns Array of items with Range objects and metadata
 	 */
-	private deserializeItems(json: string): Array<{ range: vscode.Range; label: string; level: number }> {
+	private deserializeItems(
+		json: string
+	): Array<{ range: vscode.Range; label: string; level: number }> {
 		return this.transfer.deserialize(json);
 	}
 
@@ -277,7 +287,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				return false;
 			}
 
-			getLogger().trace('PI-4: moving section', { from: sourceItem.range.start.line, to: sourceItem.range.end.line, target: targetLine });
+			getLogger().trace('PI-4: moving section', {
+				from: sourceItem.range.start.line, to: sourceItem.range.end.line, target: targetLine
+			});
 
 			// Convert to section format for calculateMovedText
 			const sectionsToMove = [{
@@ -342,7 +354,11 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 				label: item.label
 			}));
 			
-			getLogger().trace('PI-6: source items', { items: sectionsToMove.map(s => `${s.label}(${s.range.start.line}-${s.range.end.line})`).join(', ') });
+			getLogger().trace('PI-6: source items', {
+				items: sectionsToMove
+					.map(s => `${s.label}(${s.range.start.line}-${s.range.end.line})`)
+					.join(', ')
+			});
 			
 			// Calculate new document content
 			const allLines = document.getText().split('\n');
@@ -377,7 +393,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 	 * PI-4: Helper to find outline item at a given line with full range including children
 	 * This calculates the range that includes all descendant headings
 	 */
-	private findItemAtLine(document: vscode.TextDocument, lineNumber: number): OutlineItem | undefined {
+	private findItemAtLine(
+		document: vscode.TextDocument, lineNumber: number
+	): OutlineItem | undefined {
 		// Use provider's already-parsed outline if available (respects code blocks)
 		if (this.provider) {
 			const item = this.provider.findItemAtLine(lineNumber);
@@ -431,7 +449,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		}
 		
 		// PI-4: Calculate end line including all children (descendants)
-		// A child is a heading with level > parent.level that appears before any heading with level <= parent.level
+		// A child is a heading with level > parent.level that appears before
+		// any heading with level <= parent.level
 		const targetIndex = headings.findIndex(h => h.line === targetHeading!.line);
 		let endLine = targetHeading.line;
 		
@@ -465,7 +484,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			document.lineAt(endLine).text.length
 		);
 		
-		getLogger().trace('PI-4: found item with range', { label: targetHeading.text, line: targetHeading.line, endLine });
+		getLogger().trace('PI-4: found item with range', {
+			label: targetHeading.text, line: targetHeading.line, endLine
+		});
 		
 		return new OutlineItem(targetHeading.text, targetHeading.level, range, selectionRange);
 	}
@@ -504,7 +525,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		// Only allow drag for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
 		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-			getLogger().trace('drag not supported for language', { languageId: editor?.document.languageId ?? 'unknown' });
+			getLogger().trace('drag not supported for language', {
+				languageId: editor?.document.languageId ?? 'unknown'
+			});
 			return;
 		}
 		
@@ -534,7 +557,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		// Only allow drop for supported data/markup formats
 		const editor = vscode.window.activeTextEditor;
 		if (!editor || !DRAG_DROP_SUPPORTED_LANGUAGES.includes(editor.document.languageId)) {
-			getLogger().trace('drop not supported for language', { languageId: editor?.document.languageId ?? 'unknown' });
+			getLogger().trace('drop not supported for language', {
+				languageId: editor?.document.languageId ?? 'unknown'
+			});
 			return;
 		}
 		
@@ -542,7 +567,8 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 		const isWritable = await this.isDocumentWritable(editor.document);
 		if (!isWritable) {
 			vscode.window.showWarningMessage(
-				'Cannot move sections: This file is read-only. Please make the file writable to enable drag and drop.'
+				'Cannot move sections: This file is read-only.' +
+				' Please make the file writable to enable drag and drop.'
 			);
 			return;
 		}
@@ -573,7 +599,9 @@ export class TreeDragAndDropController implements vscode.TreeDragAndDropControll
 			if (target) {
 				// Drop before the target item
 				targetLine = target.range.start.line;
-				getLogger().trace('PI-3: dropped before target', { label: String(target.label), line: targetLine });
+				getLogger().trace('PI-3: dropped before target', {
+					label: String(target.label), line: targetLine
+				});
 			} else {
 				// Drop at end of document
 				targetLine = editor.document.lineCount;

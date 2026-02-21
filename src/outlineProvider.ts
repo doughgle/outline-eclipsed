@@ -10,7 +10,8 @@ import { OutlineItem } from './outlineItem';
  */
 export abstract class OutlineProvider implements vscode.TreeDataProvider<OutlineItem> {
     
-    protected _onDidChangeTreeData = new vscode.EventEmitter<OutlineItem | undefined | null | void>();
+    protected _onDidChangeTreeData =
+        new vscode.EventEmitter<OutlineItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     protected items: OutlineItem[] = [];
@@ -33,7 +34,8 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         if (document.uri.scheme === 'file') {
             try {
                 const stat = await vscode.workspace.fs.stat(document.uri);
-                if (stat.permissions !== undefined && (stat.permissions & vscode.FilePermission.Readonly)) {
+                if (stat.permissions !== undefined &&
+                    (stat.permissions & vscode.FilePermission.Readonly)) {
                     return true;
                 }
             } catch (error) {
@@ -77,7 +79,9 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
      * @param document - Document to parse
      * @returns Array of top-level outline items or Promise resolving to array
      */
-    protected abstract parseDocument(document: vscode.TextDocument): OutlineItem[] | Promise<OutlineItem[]>;
+    protected abstract parseDocument(
+        document: vscode.TextDocument
+    ): OutlineItem[] | Promise<OutlineItem[]>;
 
     /**
      * Required by TreeDataProvider - returns tree item for given element
@@ -143,7 +147,9 @@ export abstract class OutlineProvider implements vscode.TreeDataProvider<Outline
         );
         
         // Use a warning/lock icon
-        warningItem.iconPath = new vscode.ThemeIcon('lock', new vscode.ThemeColor('problemsWarningIcon.foreground'));
+        warningItem.iconPath = new vscode.ThemeIcon(
+            'lock', new vscode.ThemeColor('problemsWarningIcon.foreground')
+        );
         
         // Override description and tooltip
         warningItem.description = 'Drag & drop disabled';
