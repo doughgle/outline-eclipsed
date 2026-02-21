@@ -1,13 +1,5 @@
 import * as vscode from 'vscode';
 
-/** Extracted section lines and position metadata used during multi-section moves. */
-interface SectionData {
-	lines: string[];
-	originalStart: number;
-	originalEnd: number;
-	label: string;
-}
-
 /**
  * Handles pure text manipulation for moving sections of text.
  * Operates on string arrays and Range objects without VS Code API dependencies.
@@ -59,6 +51,13 @@ export class TextLineManipulator {
 	): { newLines: string[]; movedRanges: vscode.Range[] } {
 		const allLines = [...lines]; // Work with a copy
 		
+		// Store sections and their metadata
+		interface SectionData {
+			lines: string[];
+			originalStart: number;
+			originalEnd: number;
+			label: string;
+		}
 		const extractedSections: SectionData[] = [];
 		
 		// Extract sections in reverse order (bottom to top) to avoid line shifts
