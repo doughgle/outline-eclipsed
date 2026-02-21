@@ -34,7 +34,8 @@ function readConfiguredHighlightDuration(defaultDuration: number): number {
  * 
  * PI-0: Sets up the basic tree view infrastructure and registers event listeners.
  * Behaves like default VS Code Outline view - always visible, shows message when not applicable.
- * Supports markdown files with custom provider, and any language with symbol provider via generic provider.
+ * Supports markdown files with custom provider, and any language with symbol provider
+ * via generic provider.
  * 
  * @param context - The extension context provided by VS Code
  */
@@ -47,7 +48,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Use multi-language provider that automatically switches between language-specific providers
 	const provider = new MultiLanguageOutlineProvider();
-	const dragDropController = new TreeDragAndDropController(provider, readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION));
+	const initialHighlightDuration = readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION);
+	const dragDropController = new TreeDragAndDropController(provider, initialHighlightDuration);
 	const itemProcessor = new OutlineItemProcessor();
 
 	// Update log level and highlight duration when configuration changes at runtime
@@ -57,7 +59,9 @@ export function activate(context: vscode.ExtensionContext) {
 				getLogger().setLevel(readConfiguredLogLevel('info'));
 			}
 			if (event.affectsConfiguration('outlineEclipsed.highlightDuration')) {
-				dragDropController.setHighlightDuration(readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION));
+				dragDropController.setHighlightDuration(
+					readConfiguredHighlightDuration(DEFAULT_HIGHLIGHT_DURATION)
+				);
 			}
 		})
 	);
@@ -85,7 +89,10 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			expandedItems.delete(item);
 		}
-		logger.trace('expanded state changed', { source, action: expanded ? 'add' : 'delete', item: describeItem(item), size: expandedItems.size });
+		logger.trace('expanded state changed', {
+			source, action: expanded ? 'add' : 'delete',
+			item: describeItem(item), size: expandedItems.size
+		});
 	};
 	const clearExpandedState = (source: string): void => {
 		expandedItems.clear();
@@ -101,7 +108,10 @@ export function activate(context: vscode.ExtensionContext) {
 		const hasExpandedItems = expandedItems.size > 0;
 		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canExpand', !hasExpandedItems);
 		vscode.commands.executeCommand('setContext', 'outlineEclipsed.canCollapse', hasExpandedItems);
-		logger.trace('updateButtonState', { canExpand: !hasExpandedItems, canCollapse: hasExpandedItems, expandedItems: expandedItems.size });
+		logger.trace('updateButtonState', {
+			canExpand: !hasExpandedItems, canCollapse: hasExpandedItems,
+			expandedItems: expandedItems.size
+		});
 	};
 	
 	// Initialize button state - tree starts fully collapsed
@@ -195,16 +205,22 @@ export function activate(context: vscode.ExtensionContext) {
 	 * @param treeView - The tree view instance
 	 * @param item - The tree item to expand
 	 */
-	const expandItemRecursively = async (treeView: vscode.TreeView<OutlineItem>, item: OutlineItem): Promise<void> => {
+	const expandItemRecursively = async (
+		treeView: vscode.TreeView<OutlineItem>, item: OutlineItem
+	): Promise<void> => {
 		if (item.children && item.children.length > 0) {
 			try {
 				logger.trace('expandItemRecursively: reveal expand=true', { item: describeItem(item) });
 				await treeView.reveal(item, { select: false, focus: false, expand: true });
 				setExpandedState(item, true, 'expandItemRecursively');
 				// Expand all children in parallel for better performance
-				await Promise.all(item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child)));
+				await Promise.all(
+					item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child))
+				);
 			} catch (error) {
-				logger.error('expandItemRecursively: reveal failed', { item: describeItem(item), error: String(error) });
+				logger.error('expandItemRecursively: reveal failed', {
+					item: describeItem(item), error: String(error)
+				});
 			}
 		}
 	};
@@ -220,7 +236,9 @@ export function activate(context: vscode.ExtensionContext) {
 			clearExpandedState('applyInitialTreeState:start');
 
 			if (shouldAlwaysExpandOnOpen()) {
-				await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
+				await Promise.all(
+					provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item))
+				);
 			}
 
 			updateButtonState();
@@ -243,7 +261,9 @@ export function activate(context: vscode.ExtensionContext) {
 				logger.trace('expandAll: expanding root items', { count: provider.rootItems.length });
 				clearExpandedState('expandAll:start');
 				// Expand all root items in parallel
-				await Promise.all(provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item)));
+				await Promise.all(
+					provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item))
+				);
 				
 				// Update button state
 				updateButtonState();
@@ -280,14 +300,17 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('outlineEclipsed.moveSection', async (sourceStartLine: number, targetLine: number) => {
-			const editor = vscode.window.activeTextEditor;
-			if (!editor) {
-				return false;
+		vscode.commands.registerCommand(
+			'outlineEclipsed.moveSection',
+			async (sourceStartLine: number, targetLine: number) => {
+				const editor = vscode.window.activeTextEditor;
+				if (!editor) {
+					return false;
+				}
+				
+				return await dragDropController.moveSection(editor, sourceStartLine, targetLine);
 			}
-			
-			return await dragDropController.moveSection(editor, sourceStartLine, targetLine);
-		})
+		)
 	);
 
 	// PI-18: Command to copy labels of selected outline items to clipboard
@@ -333,7 +356,9 @@ export function activate(context: vscode.ExtensionContext) {
 		const item = provider.findItemAtLine(cursorLine);
 		
 		if (item) {
-			logger.trace('syncTreeViewSelection: found item, calling reveal()', { label: String(item.label) });
+			logger.trace('syncTreeViewSelection: found item, calling reveal()', {
+				label: String(item.label)
+			});
 			try {
 				await treeView.reveal(item, { select: true, focus: false, expand: false });
 				logger.trace('syncTreeViewSelection: reveal() completed successfully');
@@ -362,7 +387,9 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		treeView.onDidCollapseElement((event: vscode.TreeViewExpansionEvent<OutlineItem>) => {
 			if (isApplyingTreeState) {
-				logger.trace('onDidCollapseElement: ignored during apply', { item: describeItem(event.element) });
+				logger.trace('onDidCollapseElement: ignored during apply', {
+					item: describeItem(event.element)
+				});
 				return;
 			}
 			logger.trace('onDidCollapseElement', { item: describeItem(event.element) });
@@ -401,9 +428,13 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			
 			// Check if diagnostics changed for the active document
-			const affectsActiveDoc = event.uris.some(uri => uri.toString() === editor.document.uri.toString());
+			const affectsActiveDoc = event.uris.some(
+				uri => uri.toString() === editor.document.uri.toString()
+			);
 			if (affectsActiveDoc && provider.rootItems.length === 0) {
-				logger.trace('diagnostics changed, refreshing outline', { languageId: editor.document.languageId });
+				logger.trace('diagnostics changed, refreshing outline', {
+					languageId: editor.document.languageId
+				});
 				refreshWithTimeout(editor.document);
 			}
 		})
