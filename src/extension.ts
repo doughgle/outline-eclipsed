@@ -11,6 +11,9 @@ export let outlineProvider: MultiLanguageOutlineProvider | undefined;
 
 const DEFAULT_HIGHLIGHT_DURATION = 1500;
 
+/** Milliseconds to wait for a language server to deliver symbols after a document opens. */
+const SYMBOL_ACTIVATION_TIMEOUT_MS = 350;
+
 /**
  * PI-19: Read the configured highlight duration from VS Code workspace settings.
  * Returns `defaultDuration` when the setting is absent or not a number.
@@ -128,7 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// Check if we got symbols
 		if (provider.rootItems.length === 0) {
 			const elapsed = Date.now() - startTime;
-			const remainingTime = Math.max(0, 350 - elapsed);
+			const remainingTime = Math.max(0, SYMBOL_ACTIVATION_TIMEOUT_MS - elapsed);
 			
 			// Wait remaining time for symbols to become available
 			if (remainingTime > 0) {
