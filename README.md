@@ -16,17 +16,13 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 ### Features
 
-- **Drag & Drop Reordering**: Drag symbols to reorder sections in Markdown, YAML, JSON, HTML, CSS, and XML files. Nested items move with their parent automatically.
+- **Drag & Drop Reordering**: Drag symbols to reorder sections in Markdown, YAML, JSON, HTML, CSS, and XML files. Nested items move with their parent automatically. The editor auto-scrolls and highlights the moved section. Drag & drop disabled on read-only files (e.g., viewing git commit history).
+- **Clean Headings**: See your document structure at a glance with clean headings or symbol names.
 - **Bidirectional Sync**: Click a symbol to jump to that location. Move your cursor, and the tree highlights the current symbol.
 - **Copy Labels**: Select one or more outline items and press `Ctrl+C` (`Cmd+C` on Mac) or right-click and choose **Copy** to copy their labels to the clipboard — one label per line, in tree order.
-- **Visual Feedback**: After dragging, the editor auto-scrolls and highlights the moved section for 3 seconds.
-- **Real-Time Updates**: The tree refreshes automatically as you edit the document.
-- **Hierarchical View**: See your document structure at a glance with expandable/collapsible nested symbols.
-- **Expand/Collapse All**: Quickly expand or collapse all nested nodes in the tree view with custom toolbar buttons that toggle based on the tree state.
+- **Expand/Collapse All**: Quickly expand or collapse all nested nodes in the tree view with custom toolbar buttons or vscode commands.
 - **Rich Information Display**: Tree items show values for constants and data keys, with detailed tooltips including symbol type and line information.
-- **Multi-Language Support**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop enabled for data/markup formats.
-- **Graceful Language Server Activation**: Outline auto-refreshes when symbols become available; shows a short status message if symbols aren't ready yet.
-- **Read-Only File Protection**: Drag & drop disabled on read-only files (e.g., viewing git commit history). Shows clear warning with lock icon when file cannot be edited.
+- **Multi-Language Support**: Outline viewing works with any language that provides document symbols (TypeScript, JavaScript, Python, C++, Java, and more). Drag & drop enabled for data/markup formats. Outline auto-refreshes once symbols become available. Some languages require additional a language server extension to provide symbols.
 
 ### Installation
 
@@ -87,8 +83,6 @@ npm run watch
 npm test
 ```
 
-### [Roadmap](./docs/ROADMAP.md)
-
 ### Settings
 
 | Setting | Default | Description |
@@ -96,6 +90,8 @@ npm test
 | `outlineEclipsed.highlightDuration` | `1500` | Duration in milliseconds (ms) to highlight moved sections. Minimum: 100 ms. Maximum: 5000 ms. |
 | `outlineEclipsed.logLevel` | `"info"` | Controls the verbosity of Outline Eclipsed log output. One of: `off`, `error`, `warn`, `info`, `debug`, `trace`. |
 
-### License
+### Roadmap
+See [Roadmap](./docs/ROADMAP.md).
 
+### License
 MIT
