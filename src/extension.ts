@@ -135,33 +135,26 @@ export function activate(context: vscode.ExtensionContext) {
 	const refreshWithTimeout = async (document: vscode.TextDocument) => {
 		const startTime = Date.now();
 		
-		// Start the refresh
 		await provider.refresh(document);
 		
-		// Check if we got symbols
 		if (provider.rootItems.length === 0) {
 			const elapsed = Date.now() - startTime;
 			const remainingTime = Math.max(0, SYMBOL_ACTIVATION_TIMEOUT_MS - elapsed);
 			
-			// Wait remaining time for symbols to become available
 			if (remainingTime > 0) {
 				await new Promise(resolve => setTimeout(resolve, remainingTime));
-				// Try refresh again
 				await provider.refresh(document);
 			}
 			
-			// If still no symbols, show message
 			if (provider.rootItems.length === 0) {
 				updateTreeViewMessage(
 					vscode.window.activeTextEditor,
 					`No outline symbols for ${document.languageId}`
 				);
 			} else {
-				// Symbols appeared, clear message
 				updateTreeViewMessage(vscode.window.activeTextEditor);
 			}
 		} else {
-			// Got symbols immediately, clear any message
 			updateTreeViewMessage(vscode.window.activeTextEditor);
 		}
 	};
@@ -213,7 +206,6 @@ export function activate(context: vscode.ExtensionContext) {
 				logger.trace('expandItemRecursively: reveal expand=true', { item: describeItem(item) });
 				await treeView.reveal(item, { select: false, focus: false, expand: true });
 				setExpandedState(item, true, 'expandItemRecursively');
-				// Expand all children in parallel for better performance
 				await Promise.all(
 					item.children.map((child: OutlineItem) => expandItemRecursively(treeView, child))
 				);
@@ -260,12 +252,9 @@ export function activate(context: vscode.ExtensionContext) {
 			try {
 				logger.trace('expandAll: expanding root items', { count: provider.rootItems.length });
 				clearExpandedState('expandAll:start');
-				// Expand all root items in parallel
 				await Promise.all(
 					provider.rootItems.map((item: OutlineItem) => expandItemRecursively(treeView, item))
 				);
-				
-				// Update button state
 				updateButtonState();
 				logger.trace('expandAll: complete', { expandedItems: expandedItems.size });
 			} finally {
@@ -289,8 +278,6 @@ export function activate(context: vscode.ExtensionContext) {
 				logger.trace('collapseAll: executing', { command: collapseAllCommand });
 				await vscode.commands.executeCommand(collapseAllCommand);
 				clearExpandedState('collapseAll:post-command');
-				
-				// Update button state
 				updateButtonState();
 				logger.trace('collapseAll: complete', { expandedItems: expandedItems.size });
 			} finally {
