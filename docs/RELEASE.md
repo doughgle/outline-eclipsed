@@ -29,4 +29,12 @@
    git tag vX.Y.Z
    git push --follow-tags
    ```
-7. CI picks up the tag, runs a clean build on all platforms, then builds `outline-eclipsed-<version>.vsix` once and publishes it to both VS Code Marketplace and Open VSX Registry.
+7. The Release workflow picks up the tag, builds `outline-eclipsed-<version>.vsix` on Ubuntu, and publishes it to both VS Code Marketplace and Open VSX Registry.
+
+## Re-publishing to a single registry (without a new tag)
+
+Use `workflow_dispatch` to target one registry manually:
+```
+gh workflow run release.yml --ref vX.Y.Z -f registry=ovsx
+```
+Valid values for `registry`: `both`, `marketplace`, `ovsx`.
