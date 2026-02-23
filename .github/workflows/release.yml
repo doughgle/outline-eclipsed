@@ -53,13 +53,13 @@ jobs:
         run: npm run package
 
       - name: Publish to VS Code Marketplace
-        if: inputs.registry != 'ovsx'
+        if: success() && inputs.registry != 'ovsx'
         run: npm run release:marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX Registry
-        if: inputs.registry != 'marketplace'
+        if: success() && inputs.registry != 'marketplace'
         run: npm run release:ovsx
         env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
