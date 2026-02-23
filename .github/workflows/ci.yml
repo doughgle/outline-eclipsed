@@ -41,9 +41,14 @@ jobs:
       - name: Compile extension
         run: npm run compile
 
-      - name: Run tests on Linux (with xvfb)
+      - name: Run tests on Linux
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm test
+        run: |
+          if command -v xvfb-run > /dev/null 2>&1; then
+            xvfb-run -a npm test
+          else
+            npm test
+          fi
 
       - name: Run tests on macOS/Windows
         if: runner.os != 'Linux'
