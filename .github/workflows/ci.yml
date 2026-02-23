@@ -48,6 +48,3 @@ jobs:
       - name: Run tests on macOS/Windows
         if: runner.os != 'Linux'
         run: npm test
-
-      - name: Package extension
-        run: npm run package
