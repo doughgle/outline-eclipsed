@@ -140,7 +140,8 @@
     "lint": "eslint src",
     "test": "vscode-test",
     "clean": "rm -rf out",
-    "deploy": "vsce publish"
+    "package": "vsce package",
+    "release": "npm run package && vsce publish --packagePath outline-eclipsed-${npm_package_version}.vsix && ovsx publish outline-eclipsed-${npm_package_version}.vsix -p ${OPEN_VSX_TOKEN}"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -152,6 +153,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.6.2",
     "eslint": "^9.36.0",
+    "ovsx": "^0.10.9",
     "typescript": "^5.9.3"
   }
 }
