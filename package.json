@@ -141,7 +141,9 @@
     "test": "vscode-test",
     "clean": "rm -rf out",
     "package": "vsce package",
-    "release": "npm run package && vsce publish --packagePath outline-eclipsed-${npm_package_version}.vsix && ovsx publish outline-eclipsed-${npm_package_version}.vsix -p ${OPEN_VSX_TOKEN}"
+    "release:marketplace": "vsce publish --packagePath outline-eclipsed-${npm_package_version}.vsix",
+    "release:ovsx": "ovsx publish outline-eclipsed-${npm_package_version}.vsix -p ${OPEN_VSX_TOKEN}",
+    "release": "npm run package && npm run release:marketplace && npm run release:ovsx"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

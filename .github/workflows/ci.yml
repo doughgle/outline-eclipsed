@@ -7,6 +7,17 @@ permissions:
   statuses: write
 
 on:
+  workflow_dispatch:
+    inputs:
+      registry:
+        description: 'Registry to publish to'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - marketplace
+          - ovsx
   push:
     branches:
       - master
@@ -54,9 +65,18 @@ jobs:
         if: runner.os != 'Linux'
         run: npm test
 
-      - name: Publish to VS Code Marketplace and Open VSX Registry
-        if: success() && startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu-latest'
-        run: npm run release
+      - name: Package VSIX
+        if: success() && matrix.os == 'ubuntu-latest' && (startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch')
+        run: npm run package
+
+      - name: Publish to VS Code Marketplace
+        if: success() && matrix.os == 'ubuntu-latest' && (startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.registry != 'ovsx'))
+        run: npm run release:marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX Registry
+        if: success() && matrix.os == 'ubuntu-latest' && (startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.registry != 'marketplace'))
+        run: npm run release:ovsx
+        env:
           OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
