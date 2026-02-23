@@ -26,12 +26,21 @@ _Outline Eclipsed_: An outline view for VS Code that lets you drag and drop to r
 
 ### Installation
 
+**VS Code / VS Code Marketplace:**
 ```bash
-# Via VS Code Marketplace
+ext install douglashellinger.outline-eclipsed
+```
+
+**VSCodium / Open VSX Registry:**
+```bash
 ext install douglashellinger.outline-eclipsed
 ```
 
 Or search for "Outline Eclipsed" in the Extensions view (`Ctrl+Shift+X`).
+
+**Available on:**
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=douglashellinger.outline-eclipsed)
+- [Open VSX Registry](https://open-vsx.org/extension/douglashellinger/outline-eclipsed) (for VSCodium and other VS Code distributions)
 
 ### Usage
 
